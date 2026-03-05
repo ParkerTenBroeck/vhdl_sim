@@ -71,18 +71,18 @@ begin
     variable sw_i  : integer;
     variable key_i : integer;
   begin
-    ffi_init;               -- starts Rust listener thread
+    ffi_init;
     wait for 0 ns;
-
     
     while true loop
       wait until rising_edge(clk) or falling_edge(clk);
+      wait for 0 ns;
 
       sw_i  := ffi_get_sw;
       key_i := ffi_get_key;
 
-      sw  <= std_logic_vector(to_unsigned(sw_i, 32));
-      key <= std_logic_vector(to_unsigned(key_i, 32));
+      sw  <= std_logic_vector(to_signed(sw_i, 32));
+      key <= std_logic_vector(to_signed(key_i, 32));
 
       ffi_set_outputs(
           to_integer(unsigned(clean_slv(led))),

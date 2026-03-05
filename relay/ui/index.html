@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VHDL Circuit UI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <div class="title">Circuit Web UI</div>
+        <div class="subtitle">LEDs • HEX • Switches • Buttons • circuit.vhdl</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="status">
+        <span class="pill" id="wsPill">DISCONNECTED</span>
+        <span class="muted" id="wsUrlText"></span>
+      </div>
+
+      <!-- single toggle button now -->
+      <button id="connectToggleBtn">Connect</button>
+
+      <button id="sendInputsBtn" class="secondary" disabled>Send Inputs</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- Left: Editor -->
+    <section class="card editor">
+      <div class="cardHeader">
+        <div class="cardTitle">circuit.vhdl</div>
+        <div class="cardActions">
+          <button id="loadExampleBtn" class="secondary">Load example</button>
+        </div>
+      </div>
+
+      <!-- NEW: editor with line-number gutter -->
+      <div class="editorWrap">
+        <pre id="lineGutter" class="lineGutter" aria-hidden="true"></pre>
+        <textarea id="vhdlEditor" spellcheck="false"></textarea>
+      </div>
+
+      <div class="hint">
+        Saved locally as you type. On <b>Connect</b>, the UI sends <code>{"circuit.vhdl": "..."}</code> as the first WebSocket message.
+      </div>
+    </section>
+
+    <!-- Right: IO -->
+    <section class="card io">
+      <div class="cardHeader">
+        <div class="cardTitle">Outputs</div>
+      </div>
+
+      <div class="outputs">
+        <div class="block">
+          <div class="blockTitle">LEDs (32)</div>
+          <div id="ledRow" class="ledRow"></div>
+          <div class="bitLabelRow" id="ledLabels"></div>
+        </div>
+
+        <div class="block">
+          <div class="blockTitle">HEX (4 digits, 7-seg + dp)</div>
+          <div id="hexRow" class="hexRow"></div>
+          <div class="hint small">
+            Assumes each digit is 8 bits: <code>bit0=a</code>, <code>1=b</code>, <code>2=c</code>, <code>3=d</code>, <code>4=e</code>, <code>5=f</code>, <code>6=g</code>, <code>7=dp</code>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom-left: Inputs -->
+    <section class="card inputs">
+      <div class="cardHeader">
+        <div class="cardTitle">Inputs</div>
+        <div class="cardActions">
+          <button id="allSwOffBtn" class="secondary">All switches off</button>
+          <button id="allSwOnBtn" class="secondary">All switches on</button>
+        </div>
+      </div>
+
+      <div class="twoCols">
+        <div class="block">
+          <div class="blockTitle">Switches (32, latched)</div>
+          <div id="switchGrid" class="ioGrid"></div>
+        </div>
+
+        <div class="block">
+          <div class="blockTitle">Buttons (32, momentary)</div>
+          <div id="buttonGrid" class="ioGrid"></div>
+        </div>
+      </div>
+
+      <div class="hint">
+        Switches toggle a bit. Buttons set the bit while pressed (mouse/touch) and clear on release.
+      </div>
+    </section>
+
+    <!-- Bottom-right: Logs -->
+    <section class="card logs">
+      <div class="cardHeader">
+        <div class="cardTitle">Logs</div>
+        <div class="cardActions">
+          <button id="clearLogBtn" class="secondary">Clear</button>
+          <button id="autoscrollBtn" class="secondary">Autoscroll: on</button>
+        </div>
+      </div>
+
+      <pre id="logView" class="logView"></pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

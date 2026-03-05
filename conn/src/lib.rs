@@ -11,7 +11,7 @@ pub struct SimState{
 }
 
 static STATE: SimState = SimState{
-    switch: AtomicU32::new(0),
+    switch: AtomicU32::new(512),
     button: AtomicU32::new(0),
     led: AtomicU32::new(0),
     hex: AtomicU32::new(0),
@@ -52,9 +52,10 @@ pub extern "C" fn ffi_get_key() -> u32 {
 #[no_mangle]
 pub extern "C" fn ffi_set_outputs(led: u32, hex: u32) {
     if STATE.led.swap(led, Ordering::Relaxed) != led{
-        println!("LED={:#x?}", STATE.led.load(Ordering::Relaxed))
+        eprintln!("LED={}", STATE.led.load(Ordering::Relaxed))
     }
     if STATE.hex.swap(hex, Ordering::Relaxed) != hex{
-        println!("HEX={:#x?}", STATE.hex.load(Ordering::Relaxed))
+        eprintln!("HEX={}", STATE.hex.load(Ordering::Relaxed))
     }
+    std::thread::sleep(std::time::Duration::from_millis(1));
 }
