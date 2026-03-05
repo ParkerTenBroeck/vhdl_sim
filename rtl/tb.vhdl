@@ -7,7 +7,7 @@ end entity;
 
 architecture sim of tb is
   signal clk  : std_logic := '0';
-  signal key  : std_logic_vector(31 downto 0) := (others => '1'); -- active low
+  signal key  : std_logic_vector(31 downto 0) := (others => '0');
   signal sw   : std_logic_vector(31 downto 0) := (others => '0');
 
   signal led  : std_logic_vector(31 downto 0) := (others => '0');

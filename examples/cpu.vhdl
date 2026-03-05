@@ -9,7 +9,7 @@ port (
   key: in std_logic_vector(31 downto 0);   -- active low
   sw: in std_logic_vector(31 downto 0);   -- active high
   led: out std_logic_vector(31 downto 0);  -- active high
-  hex: out std_logic_vector(31 downto 0)  -- active low
+  hex: out std_logic_vector(31 downto 0)
   );
 end circuit;
 
@@ -102,15 +102,19 @@ architecture Behavioral of inst_ram_8x256 is
     type ram_type is array (0 to 255) of unsigned(7 downto 0);
     signal ram : ram_type := (
       0 => x"A0", -- 0 => a
-      2 => x"B1", -- 1 => b
-      3 => x"10", -- a+b => out
-      4 => x"FE", -- out
-      5 => x"AE", -- out => a
-      6 => x"10", -- a+b => out
-      7 => x"FE", -- out
-      8 => x"BE", -- out => b
-      9 => x"D0", -- jump to 3
-      10 => x"03",
+      1 => x"B1", -- 1 => b
+      2 => x"10", -- a+b => out
+      3 => x"FE", -- out
+      4 => x"AE", -- out => a
+      5 => x"01", -- swap a/b
+      
+      6 => x"3F", -- cmp 144, b
+      7 => x"90",
+      
+      8 => x"C7", -- jump to 2 if 144 <= b
+      9 => x"02",
+      
+      10 => x"FF", -- halt
       others => (others => '0')
     );
 begin
@@ -151,11 +155,6 @@ architecture description of circuit is
   signal flag_eq: std_logic := '0';
   signal flag_zero: std_logic := '0';
 
-  signal alu_a, alu_b, alu_o : unsigned(7 downto 0) := "00000000";
-  signal alu_func : unsigned(3 downto 0) := "0000";
-  signal alu_carry, alu_zero, alu_gt, alu_lt, alu_eq : std_logic := '0';
-  signal alu_tmp: unsigned(8 downto 0) := "000000000";
-
   function dec7seg(val: unsigned(3 downto 0)) return std_logic_vector is
     begin
       case val is
@@ -182,10 +181,22 @@ architecture description of circuit is
 
 begin
 
-  -- hex(7 downto 4) <= dec7seg(reg_out(7 downto 4));
-  -- hex(3 downto 0) <= dec7seg(reg_out(3 downto 0));
+  hex(6 downto 0) <= not dec7seg(reg_out(7 downto 4));
+  hex(14 downto 8) <= not dec7seg(reg_out(3 downto 0));
 
-  clock <= clk when sw(9) = '1' else sw(8);
+  hex(22 downto 16) <= not dec7seg(reg_pc(7 downto 4));
+  hex(30 downto 24) <= not dec7seg(reg_pc(3 downto 0));
+
+  led(7 downto 0) <= std_logic_vector(reg_a);
+  led(23 downto 16) <= std_logic_vector(reg_b);
+
+  led(8) <= flag_zero;
+  led(9) <= flag_eq;
+  led(10) <= flag_lt;
+  led(11) <= flag_gt;
+  led(12) <= flag_carry;
+
+  clock <= clk when sw(9) = '1' else key(0);
   
   ram_inst : entity work.inst_ram_8x256
     port map(
@@ -203,147 +214,172 @@ begin
         dout => data_read
     );
 
-      with alu_func select
-      alu_tmp <=  ("0"&alu_a) + ("0"&alu_b) when x"0",
-            ("0"&alu_a) + ("0"&alu_b) + (x"00"&flag_carry) when x"1",
-            ("0"&alu_a) - ("0"&alu_b) when x"2",
-            ("0"&alu_a) - ("0"&alu_b) - (x"00"&flag_carry) when x"3",
-            ("0"&alu_a) and ("0"&alu_b) when x"4",
-            ("0"&alu_a) or ("0"&alu_b) when x"5",
-            ("0"&alu_a) xor ("0"&alu_b) when x"6",
-            "0"&x"00" when others;
 
-    alu_zero <= '1' when alu_tmp = 0 else '0';
-    alu_eq <= '1' when alu_a = alu_b else '0';
-    alu_lt <= '1' when alu_a < alu_b else '0';
-    alu_gt <= '1' when alu_a > alu_b else '0';
-    alu_carry <= alu_tmp(8); 
-    alu_o <= alu_tmp(7 downto 0);
-
-    -- alu : entity work.alu
-    --   port map(
-    --     func      => alu_func,
-    --     a         => alu_a,
-    --     b         => alu_b,
-    --     carry_in  => flag_carry,
-    --     o         => alu_o,
-    --     carry_out => alu_carry,
-    --     zero      => alu_zero,
-    --     gt        => alu_gt,
-    --     lt        => alu_lt,
-    --     eq        => alu_eq
-    --   );
 
   process(clock)
-    variable out_extended : unsigned(8 downto 0);
+    variable alu_tmp: unsigned(8 downto 0) := "000000000";
+    variable alu_a: unsigned(7 downto 0) := "00000000";
+    variable alu_b: unsigned(7 downto 0) := "00000000";
+    variable branch: std_logic := '0';
   begin
 
     if rising_edge(clock) then
       inst_reg <= inst_bus;
       data_write_e <= '0';
 
-      -- report "begin reg_a = " & integer'image(to_integer(unsigned(reg_a)))
+      --report "begin reg_a = " & integer'image(to_integer(unsigned(reg_a)))
       -- & " reg_b = " & integer'image(to_integer(unsigned(reg_b)))
       -- & " reg_out = " & integer'image(to_integer(unsigned(reg_out)))
       -- & " reg_pc = " & integer'image(to_integer(unsigned(reg_pc)))
       -- & " inst_bus = " & integer'image(to_integer(unsigned(inst_bus)));
 
-      -- alu operations a,b
-      if inst_bus(7 downto 4) = x"1" then
-        alu_func <= inst_bus(3 downto 0);
-        alu_a <= reg_a;
-        alu_b <= reg_b;
-        reg_out <= alu_o;
-      end if;
-      -- alu operations a,imm
-      if inst_bus(7 downto 4) = x"2" then
-        alu_func <= inst_bus(3 downto 0);
-        alu_a <= reg_a;
-        alu_b <= x"00";
-        reg_pc <= reg_pc+1;
-      end if;
-      -- alu operations imm,b
-      if inst_bus(7 downto 4) = x"3" then
-        alu_func <= inst_bus(3 downto 0);
-        alu_a <= x"00";
-        alu_b <= reg_b;
-        reg_pc <= reg_pc+1;
-      end if;
-
-      case inst_bus is
+      case to_integer(inst_bus) is
         -- nop
-        when x"00" => null;
+        when 16#00# => null;
+        -- a, b swap
+        when 16#01# => 
+          reg_a <= reg_b;
+          reg_b <= reg_a;
+
+        -- alu operations a,imm
+        -- alu operations imm,b
+        when 16#20# to 16#3F# => reg_pc <= reg_pc+1;
+
 
         -- 0 => a
-        when x"A0" => reg_a <= x"00";
+        when 16#A0# => reg_a <= x"00";
         -- 1 => a
-        when x"A1" => reg_a <= x"01";
+        when 16#A1# => reg_a <= x"01";
         -- mem[reg b] => a 
-        when x"AC" =>
+        when 16#AC# =>
          data_addr <= reg_b;
         -- out => a
-        when x"AE" => reg_a <= reg_out;
+        when 16#AE# => reg_a <= reg_out;
         -- immediate => a
-        when x"AF" => reg_pc <= reg_pc+1;
+        when 16#AF# => reg_pc <= reg_pc+1;
 
         -- 0 => b
-        when x"B0" => reg_b <= x"00";
+        when 16#B0# => reg_b <= x"00";
         -- 1 => b
-        when x"B1" => reg_b <= x"01";
+        when 16#B1# => reg_b <= x"01";
         -- mem[reg a] => b 
-        when x"BC" => 
+        when 16#BC# => 
          data_addr <= reg_b;
         -- out => b
-        when x"BE" => reg_b <= reg_out;
+        when 16#BE# => reg_b <= reg_out;
         -- immediate => b
-        when x"BF" => reg_pc <= reg_pc+1;
+        when 16#BF# => reg_pc <= reg_pc+1;
 
-        -- conditional
+        -- conditional jump
+        when 16#C0# to 16#CF# => reg_pc <= reg_pc+1;
 
         -- jump imm addr abs
-        when x"D0" => reg_pc <= reg_pc+1;
+        when 16#D0# => reg_pc <= reg_pc+1;
         -- jump imm addr rel
-        when x"D1" => reg_pc <= reg_pc+1;
+        when 16#D1# => reg_pc <= reg_pc+1;
         -- jump addr reg a
-        when x"DA" => reg_pc <= reg_a-1;
+        when 16#DA# => reg_pc <= reg_a-1;
         -- jump addr reg b
-        when x"DB" => reg_pc <= reg_b-1;
+        when 16#DB# => reg_pc <= reg_b-1;
 
         -- out
-        when x"FE" => report " out = " & integer'image(to_integer(unsigned(reg_out)));
+        when 16#FE# => report " out = " & integer'image(to_integer(unsigned(reg_out)));
         -- halt
-        when x"FF" => reg_pc <= reg_pc-1;
+        when 16#FF# => reg_pc <= reg_pc-1;
 
+        when others =>  null;
+      end case;
+
+      case to_integer(inst_bus(2 downto 0)) is
+        when 0 => branch := flag_zero;
+        when 1 => branch := flag_carry;
+        when 2 => branch := flag_eq;
+        when 3 => branch := not flag_eq;
+        when 4 => branch := flag_lt;
+        when 5 => branch := flag_gt;
+        when 6 => branch := flag_lt or flag_eq;
+        when 7 => branch := flag_gt or flag_eq;
         when others =>  null;
       end case;
     end if;
 
     if falling_edge(clock) then
-      case inst_reg is
-        when x"AC" => reg_a <= data_read;
-        when x"AF" => reg_a <= inst_bus;
+      case to_integer(inst_reg) is
+        when 16#AC# => reg_a <= data_read;
+        when 16#AF# => reg_a <= inst_bus;
 
-        when x"BC" => reg_b <= data_read;
-        when x"BF" => reg_b <= inst_bus;
+        when 16#BC# => reg_b <= data_read;
+        when 16#BF# => reg_b <= inst_bus;
+
+      -- alu operation a,b
+        when 16#10# to 16#1F# => 
+          alu_a := reg_a;
+          alu_b := reg_b;
+
+      -- alu operations a,imm
+        when 16#20# to 16#2F# => 
+          alu_a := reg_a;
+          alu_b := inst_bus;
+
+      -- alu operations imm,b
+        when 16#30# to 16#3F# => 
+          alu_a := inst_bus;
+          alu_b := reg_b; 
+
+        when 16#C0# to 16#C7# => alu_tmp(7 downto 0) := inst_bus;
+        when 16#C8# to 16#CF# => alu_tmp(7 downto 0) := inst_bus+reg_pc;
 
         when others => null;
       end case;
 
+      -- alu operation
+      if inst_reg(7 downto 4) = x"1" or inst_reg(7 downto 4) = x"2" or inst_reg(7 downto 4) = x"3" then
+          with inst_reg(3 downto 0) select
+            alu_tmp :=  ("0"&alu_a) + ("0"&alu_b) when x"0",
+                  ("0"&alu_a) + ("0"&alu_b) + (x"00"&flag_carry) when x"1",
+                  ("0"&alu_a) - ("0"&alu_b) when x"2",
+                  ("0"&alu_a) - ("0"&alu_b) - (x"00"&flag_carry) when x"3",
+                  ("0"&alu_a) and ("0"&alu_b) when x"4",
+                  ("0"&alu_a) or ("0"&alu_b) when x"5",
+                  ("0"&alu_a) xor ("0"&alu_b) when x"6",
+                  shift_left("0"&alu_a,to_integer("0"&alu_b)) when x"7",
+                  shift_right("0"&alu_a,to_integer("0"&alu_b)) when x"8",
+                  rotate_left("0"&alu_a,to_integer("0"&alu_b)) when x"9",
+                  rotate_right("0"&alu_a,to_integer("0"&alu_b)) when x"A",
+                  "0"&x"00" when others;
 
-      case inst_reg is
+          flag_zero <= '1' when alu_tmp = 0 else '0';
+          flag_eq <= '1' when alu_a = alu_b else '0';
+          flag_lt <= '1' when alu_a < alu_b else '0';
+          flag_gt <= '1' when alu_a > alu_b else '0';
+          flag_carry <= alu_tmp(8); 
+          reg_out <= alu_tmp(7 downto 0);
+
+      end if;
+
+
+      case to_integer(inst_reg) is
         -- jump imm addr abs
-        when x"D0" => reg_pc <= inst_bus;
+        when 16#D0# => reg_pc <= inst_bus;
         -- jump imm addr rel
-        when x"D1" => reg_pc <= reg_pc+inst_bus;
+        when 16#D1# => reg_pc <= reg_pc+inst_bus;
+
+        -- conditional brances
+        when 16#C0# to 16#CF# => 
+          if branch then 
+            reg_pc <= alu_tmp(7 downto 0); 
+          else 
+            reg_pc <= reg_pc+1;
+          end if;
 
         when others => reg_pc <= reg_pc+1;
       end case;
 
-      --       report "end reg_a = " & integer'image(to_integer(unsigned(reg_a)))
-      -- & " reg_b = " & integer'image(to_integer(unsigned(reg_b)))
-      -- & " reg_out = " & integer'image(to_integer(unsigned(reg_out)))
-      -- & " reg_pc = " & integer'image(to_integer(unsigned(reg_pc)))
-      -- & " inst_bus = " & integer'image(to_integer(unsigned(inst_bus)));
+      -- report "end reg_a = " & integer'image(to_integer(unsigned(reg_a)))
+      --   & " reg_b = " & integer'image(to_integer(unsigned(reg_b)))
+      --   & " reg_out = " & integer'image(to_integer(unsigned(reg_out)))
+      --   & " reg_pc = " & integer'image(to_integer(unsigned(reg_pc)))
+      --   & " inst_bus = " & integer'image(to_integer(unsigned(inst_bus)));
       
 
     end if;

@@ -6,22 +6,20 @@ use ieee.numeric_std.all;
 entity circuit is
 port (
   clk: in std_logic; -- 500 Hz, period 2 ms
-  key: in std_logic_vector(31 downto 0);   -- active low
+  key: in std_logic_vector(31 downto 0);   -- active high
   sw: in std_logic_vector(31 downto 0);   -- active high
   led: out std_logic_vector(31 downto 0) := (others => '0');  -- active high
-  hex: out std_logic_vector(31 downto 0) := (others => '0')  -- active low
+  hex: out std_logic_vector(31 downto 0) := (others => '0')  -- active high
   );
 end circuit;
 
 
 architecture description of circuit is
-  signal counter: unsigned(9 downto 0) := "0000000000";
+  signal counter: unsigned(31 downto 0) := x"00000000";
 begin
-  led(9 downto 0) <= std_logic_vector(counter);
-  -- led(10) <= clk;
-  process(sw(0))
+  led <= std_logic_vector(counter);
+  process(clk)
   begin
     counter <= counter+1;
-    report "meow";
   end process;
 end description;
