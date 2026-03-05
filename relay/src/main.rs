@@ -72,15 +72,15 @@ async fn ws_handler(socket: WebSocket) {
         },
     };
 
-    let (_process, mut sin, sout, serr) = match run::run(&artifact_dir).await{
+    let mut process = match run::run(&artifact_dir).await{
         Ok(process) => process,
         Err(err) => {
             _ = sender.send(Message::Text(format!("Failed to run: {err}").into())).await;
             return;
         },
     };
-    let mut sout = BufReader::new(sout).lines();
-    let mut serr = BufReader::new(serr).lines();
+    let mut sout = BufReader::new(process.stdout).lines();
+    let mut serr = BufReader::new(process.stderr).lines();
 
     let artifact_prefix = artifact_dir.to_str().unwrap_or("\0\0NOPE");
     
@@ -93,8 +93,8 @@ async fn ws_handler(socket: WebSocket) {
                         Some(Ok(Message::Text(msg))) => {
                             let input = serde_json::from_str::<'_, ClientInput>(&msg)?;
                             use tokio::io::AsyncWriteExt;
-                            sin.write_all(format!("key={}\n", input.buttons).as_bytes()).await?;
-                            sin.write_all(format!("sw={}\n", input.switch).as_bytes()).await?;
+                            process.stdin.write_all(format!("key={}\n", input.buttons).as_bytes()).await?;
+                            process.stdin.write_all(format!("sw={}\n", input.switch).as_bytes()).await?;
                         },
                         Some(Ok(_)) => {},
                         Some(Err(err)) => Err(err)?,
