@@ -11,7 +11,8 @@ pub struct Process{
 
 pub async fn run(artifact_dir: &Path)  -> Result<Process, Box<dyn std::error::Error + Send + Sync>>{
         let mut cmd = Command::new("ghdl");
-    cmd.args(["-r", "--std=08", "tb", "--stop-delta=2147483647", "--unbuffered"]);
+    cmd.args(["-r", "--std=08", "tb", "--stop-delta=4294967296", "--unbuffered", "--"]);
+    cmd.args(std::env::args_os());
     cmd.current_dir(artifact_dir);
     cmd.kill_on_drop(true);
 

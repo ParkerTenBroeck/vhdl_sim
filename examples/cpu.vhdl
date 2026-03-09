@@ -6,10 +6,13 @@ use ieee.numeric_std.all;
 entity circuit is
 port (
   clk: in std_logic; 
-  key: in std_logic_vector(31 downto 0);   -- active low
-  sw: in std_logic_vector(31 downto 0);   -- active high
-  led: out std_logic_vector(31 downto 0);  -- active high
-  hex: out std_logic_vector(31 downto 0)
+  btn: in std_logic_vector(31 downto 0); 
+  sw: in std_logic_vector(31 downto 0); 
+  led: out std_logic_vector(31 downto 0);
+  seg0: out std_logic_vector(31 downto 0);
+  seg1: out std_logic_vector(31 downto 0);
+  seg2: out std_logic_vector(31 downto 0);
+  seg3: out std_logic_vector(31 downto 0)
   );
 end circuit;
 
@@ -181,11 +184,11 @@ architecture description of circuit is
 
 begin
 
-  hex(6 downto 0) <= not dec7seg(reg_out(7 downto 4));
-  hex(14 downto 8) <= not dec7seg(reg_out(3 downto 0));
+  seg0(6 downto 0) <= not dec7seg(reg_out(7 downto 4));
+  seg0(14 downto 8) <= not dec7seg(reg_out(3 downto 0));
 
-  hex(22 downto 16) <= not dec7seg(reg_pc(7 downto 4));
-  hex(30 downto 24) <= not dec7seg(reg_pc(3 downto 0));
+  seg0(22 downto 16) <= not dec7seg(reg_pc(7 downto 4));
+  seg0(30 downto 24) <= not dec7seg(reg_pc(3 downto 0));
 
   led(7 downto 0) <= std_logic_vector(reg_a);
   led(23 downto 16) <= std_logic_vector(reg_b);
@@ -196,7 +199,7 @@ begin
   led(11) <= flag_gt;
   led(12) <= flag_carry;
 
-  clock <= clk when sw(9) = '1' else key(0);
+  clock <= clk when sw(9) = '1' else btn(0);
   
   ram_inst : entity work.inst_ram_8x256
     port map(

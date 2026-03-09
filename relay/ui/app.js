@@ -69,7 +69,7 @@ function clearLogs() {
 function resetOutputsVisuals() {
   // reset LED/HEX visuals to 0 immediately
   setLeds(0);
-  setHex(0);
+  setSeg(0);
 }
 
 function u32BitGet(x, i) {
@@ -196,7 +196,7 @@ function buildHex() {
   }
 }
 
-function setHex(hexU32) {
+function setSeg(hexU32, seg) {
   const digits = parseHexDigits(hexU32 >>> 0);
 
   for (let i = 0; i < 4; i++) {
@@ -344,9 +344,27 @@ function connect() {
       return;
     }
 
-    if (parsed.hex !== undefined) {
-      const v = (parsed.hex ?? parsed.value ?? parsed[0] ?? parsed["0"] ?? 0) >>> 0;
-      setHex(v);
+    if (parsed.seg0 !== undefined) {
+      const v = (parsed.seg0 ?? parsed.value ?? parsed[0] ?? parsed["0"] ?? 0) >>> 0;
+      setSeg(v, 0);
+      return;
+    }
+
+    if (parsed.seg1 !== undefined) {
+      const v = (parsed.seg1 ?? parsed.value ?? parsed[0] ?? parsed["0"] ?? 0) >>> 0;
+      setSeg(v, 1);
+      return;
+    }
+
+    if (parsed.seg2 !== undefined) {
+      const v = (parsed.seg3 ?? parsed.value ?? parsed[0] ?? parsed["0"] ?? 0) >>> 0;
+      setSeg(v, 2);
+      return;
+    }
+
+    if (parsed.seg3 !== undefined) {
+      const v = (parsed.seg3 ?? parsed.value ?? parsed[0] ?? parsed["0"] ?? 0) >>> 0;
+      setSeg(v, 3);
       return;
     }
 

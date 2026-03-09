@@ -6,10 +6,13 @@ use ieee.numeric_std.all;
 entity circuit is
 port (
   clk: in std_logic; -- 500 Hz, period 2 ms
-  key: in std_logic_vector(31 downto 0);   -- active high
-  sw: in std_logic_vector(31 downto 0);   -- active high
-  led: out std_logic_vector(31 downto 0) := (others => '0');  -- active high
-  hex: out std_logic_vector(31 downto 0) := (others => '0')  -- active high
+  btn: in std_logic_vector(31 downto 0);
+  sw: in std_logic_vector(31 downto 0);
+  led: out std_logic_vector(31 downto 0) := (others => '0');
+  seg0: out std_logic_vector(31 downto 0);
+  seg1: out std_logic_vector(31 downto 0);
+  seg2: out std_logic_vector(31 downto 0);
+  seg3: out std_logic_vector(31 downto 0)
   );
 end circuit;
 

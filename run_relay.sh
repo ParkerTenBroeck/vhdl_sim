@@ -7,5 +7,5 @@ popd >/dev/null
 
 
 pushd relay >/dev/null
-cargo run --release
+cargo run --release -- "$@"
 popd >/dev/null

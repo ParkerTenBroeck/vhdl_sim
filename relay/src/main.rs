@@ -46,10 +46,11 @@ struct ClientInput{
 #[serde(rename_all = "snake_case")]
 enum ServerMsg<'a> {
     Log { stream: &'a str, line: &'a str },
-    /// bitfield of 32 leds
     Led(u32),
-    /// bitfield of 4 hex displays, 7 segment with decimal
-    Hex(u32)
+    Seg0(u32),
+    Seg1(u32),
+    Seg2(u32),
+    Seg3(u32)
 }
 
 async fn ws_handler(socket: WebSocket) {
@@ -93,14 +94,13 @@ async fn ws_handler(socket: WebSocket) {
                         Some(Ok(Message::Text(msg))) => {
                             let input = serde_json::from_str::<'_, ClientInput>(&msg)?;
                             use tokio::io::AsyncWriteExt;
-                            process.stdin.write_all(format!("key={}\n", input.buttons).as_bytes()).await?;
+                            process.stdin.write_all(format!("btn={}\n", input.buttons).as_bytes()).await?;
                             process.stdin.write_all(format!("sw={}\n", input.switch).as_bytes()).await?;
                         },
                         Some(Ok(_)) => {},
                         Some(Err(err)) => Err(err)?,
                         _ => break,
                     }
-
                 }
                 out = sout.next_line() => {
                     match out{
@@ -121,10 +121,16 @@ async fn ws_handler(socket: WebSocket) {
                 err = serr.next_line() => {
                     match err{
                         Ok(Some(line)) => {
-                            let msg = if let Some(repr) = line.strip_prefix("LED="){
+                            let msg = if let Some(repr) = line.strip_prefix("led="){
                                 ServerMsg::Led(repr.parse().unwrap_or(0))
-                            }else if let Some(repr) = line.strip_prefix("HEX="){
-                                ServerMsg::Hex(repr.parse().unwrap_or(0))
+                            }else if let Some(repr) = line.strip_prefix("seg0="){
+                                ServerMsg::Seg0(repr.parse().unwrap_or(0))
+                            }else if let Some(repr) = line.strip_prefix("seg1="){
+                                ServerMsg::Seg1(repr.parse().unwrap_or(0))
+                            }else if let Some(repr) = line.strip_prefix("seg2="){
+                                ServerMsg::Seg2(repr.parse().unwrap_or(0))
+                            }else if let Some(repr) = line.strip_prefix("seg3="){
+                                ServerMsg::Seg3(repr.parse().unwrap_or(0))
                             }else{
                                 ServerMsg::Log {
                                     stream: "stderr",
@@ -138,6 +144,10 @@ async fn ws_handler(socket: WebSocket) {
                             Err(format!("Failed to read proccess serr: {err}"))?
                         }
                     }
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_millis(30)) => {
+                    use tokio::io::AsyncWriteExt;
+                    process.stdin.write_all("\n".as_bytes()).await?;
                 }
             }        
         }

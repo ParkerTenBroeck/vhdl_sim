@@ -2,20 +2,22 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+
 entity tb is
+  
 end entity;
 
 architecture sim of tb is
   signal clk  : std_logic := '0';
-  signal key  : std_logic_vector(31 downto 0) := (others => '0');
+  signal btn  : std_logic_vector(31 downto 0) := (others => '0');
   signal sw   : std_logic_vector(31 downto 0) := (others => '0');
-
   signal led  : std_logic_vector(31 downto 0) := (others => '0');
-  signal hex : std_logic_vector(31 downto 0) := (others => '0');
+  signal seg0 : std_logic_vector(31 downto 0) := (others => '0');
+  signal seg1 : std_logic_vector(31 downto 0) := (others => '0');
+  signal seg2 : std_logic_vector(31 downto 0) := (others => '0');
+  signal seg3 : std_logic_vector(31 downto 0) := (others => '0');
 
 
-  -- Foreign subprograms MUST be declared in the declarative region (here),
-  -- and MUST have a body (even dummy) to satisfy VHDL.
   procedure ffi_init is
   begin
   end procedure;
@@ -29,13 +31,13 @@ architecture sim of tb is
   attribute foreign of ffi_get_sw : function is
     "VHPIDIRECT ffi_get_sw";
 
-  function ffi_get_key return integer is
+  function ffi_get_btn return integer is
   begin
     return 0;
   end function;
-  attribute foreign of ffi_get_key : function is "VHPIDIRECT ffi_get_key";
+  attribute foreign of ffi_get_btn : function is "VHPIDIRECT ffi_get_btn";
 
-  procedure ffi_set_outputs(led_i : integer; hex_i : integer) is
+  procedure ffi_set_outputs(led_i: integer; seg0_i: integer; seg1_i: integer; seg2_i: integer; seg3_i: integer) is
   begin
   end procedure;
   attribute foreign of ffi_set_outputs : procedure is
@@ -58,10 +60,13 @@ begin
   dut: entity work.circuit
     port map (
       clk  => clk,
-      key  => key,
+      btn  => btn,
       sw   => sw,
       led  => led,
-      hex => hex
+      seg0 => seg0,
+      seg1 => seg1,
+      seg2 => seg2,
+      seg3 => seg3
     );
 
   -- 500 Hz clock (2 ms period)
@@ -69,7 +74,7 @@ begin
 
   process
     variable sw_i  : integer;
-    variable key_i : integer;
+    variable btn_i : integer;
   begin
     ffi_init;
     wait for 0 ns;
@@ -79,14 +84,17 @@ begin
       wait for 0 ns;
 
       sw_i  := ffi_get_sw;
-      key_i := ffi_get_key;
+      btn_i := ffi_get_btn;
 
       sw  <= std_logic_vector(to_signed(sw_i, 32));
-      key <= std_logic_vector(to_signed(key_i, 32));
+      btn <= std_logic_vector(to_signed(btn_i, 32));
 
       ffi_set_outputs(
           to_integer(unsigned(clean_slv(led))),
-          to_integer(unsigned(clean_slv(hex)))
+          to_integer(unsigned(clean_slv(seg0))),
+          to_integer(unsigned(clean_slv(seg1))),
+          to_integer(unsigned(clean_slv(seg2))),
+          to_integer(unsigned(clean_slv(seg3)))
       );
     end loop;
   end process;
