@@ -3,19 +3,6 @@ use std::{
     sync::atomic::{AtomicU8, AtomicU32, AtomicU64, Ordering},
 };
 
-#[repr(u8)]
-pub enum Sig {
-    SU = 0,
-    SX = 1,
-    S0 = 2,
-    S1 = 3,
-    SZ = 4,
-    SW = 5,
-    SL = 6,
-    SH = 7,
-    SD = 8
-}
-
 pub struct SimState{
     switch: AtomicU32,
     button: AtomicU32,
