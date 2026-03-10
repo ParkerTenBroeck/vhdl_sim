@@ -1,17 +1,24 @@
-use std::{path::Path};
+use std::path::Path;
 
-use tokio::process::{Child, ChildStdin, ChildStdout, ChildStderr, Command};
+use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 
-pub struct Process{
+pub struct Process {
     pub child: Child,
     pub stdin: ChildStdin,
-    pub stdout: ChildStdout, 
-    pub stderr: ChildStderr
+    pub stdout: ChildStdout,
+    pub stderr: ChildStderr,
 }
 
-pub async fn run(artifact_dir: &Path)  -> Result<Process, Box<dyn std::error::Error + Send + Sync>>{
-        let mut cmd = Command::new("ghdl");
-    cmd.args(["-r", "--std=08", "tb", "--stop-delta=4294967296", "--unbuffered", "--"]);
+pub async fn run(artifact_dir: &Path) -> Result<Process, Box<dyn std::error::Error + Send + Sync>> {
+    let mut cmd = Command::new("ghdl");
+    cmd.args([
+        "-r",
+        "--std=08",
+        "tb",
+        "--stop-delta=4294967296",
+        "--unbuffered",
+        "--",
+    ]);
     cmd.args(std::env::args_os());
     cmd.current_dir(artifact_dir);
     cmd.kill_on_drop(true);
@@ -26,5 +33,10 @@ pub async fn run(artifact_dir: &Path)  -> Result<Process, Box<dyn std::error::Er
     let stdout = child.stdout.take().ok_or("no stdout")?;
     let stderr = child.stderr.take().ok_or("no stderr")?;
 
-    Ok(Process { child, stdin, stdout, stderr })
+    Ok(Process {
+        child,
+        stdin,
+        stdout,
+        stderr,
+    })
 }
