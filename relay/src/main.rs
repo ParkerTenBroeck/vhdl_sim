@@ -1,20 +1,11 @@
 use axum::{
     Router,
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::ws::WebSocketUpgrade,
     routing::get,
 };
-use futures_util::{
-    stream::{SplitSink, SplitStream},
-};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, net::SocketAddr, path::PathBuf, time::Duration};
-use tokio::{
-    io::{BufReader, Lines},
-    process::{Child, ChildStderr, ChildStdin, ChildStdout},
-};
+use std::net::SocketAddr;
 use tower_http::services::ServeDir;
-
-use crate::build::TempDir;
 
 pub mod build;
 pub mod run;
@@ -25,8 +16,12 @@ pub mod remote;
 async fn main() {
     let app = Router::new()
         .route(
-            "/ws",
+            "/ws/local",
             get(|ws: WebSocketUpgrade| async move { ws.on_upgrade(remote::ws_handler) }),
+        )
+        .route(
+            "/ws/remote",
+            get(|ws: WebSocketUpgrade| async move { ws.on_upgrade(local::ws_handler) }),
         )
         .fallback_service(ServeDir::new("ui"));
 
@@ -39,9 +34,8 @@ async fn main() {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum ClientMsg {
-    Compile(Option<HashMap<String, String>>),
     Start,
     Stop,
     Input {
@@ -63,27 +57,6 @@ pub enum ServerMsg<'a> {
     Seg1(u32),
     Seg2(u32),
     Seg3(u32),
-}
-
-struct Process {
-    process: Child,
-
-    stderr: Lines<BufReader<ChildStderr>>,
-    stdout: Lines<BufReader<ChildStdout>>,
-    stdin: ChildStdin,
-}
-
-struct Handler {
-    sender: SplitSink<WebSocket, Message>,
-    receiver: SplitStream<WebSocket>,
-
-    build_dir: TempDir,
-    src_dir: PathBuf,
-
-    program: Option<PathBuf>,
-    process: Option<Process>,
-
-    refresh_time: Duration,
 }
 
 pub type HResult<T> = Result<T, Box<dyn std::error::Error + Sync + Send>>;

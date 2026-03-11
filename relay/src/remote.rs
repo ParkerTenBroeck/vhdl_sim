@@ -4,9 +4,9 @@ use axum::{
 use futures_util::{
     SinkExt, StreamExt,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 use tokio::{
-    io::{AsyncBufReadExt, BufReader},
+    io::{AsyncBufReadExt, BufReader}, time::Instant,
 };
 
 use crate::{ClientMsg, HResult, ServerMsg, build, run};
@@ -23,7 +23,7 @@ pub async fn ws_handler(socket: WebSocket) {
     };
 
 
-    let artifact_dir = match build::build(files).await{
+    let artifact_dir = match build::copy_and_build(files).await{
         Ok(dir) => dir,
         Err(err) => {
             _ = sender.send(Message::Text(format!("Failed to build: {err}").into())).await;
@@ -42,6 +42,8 @@ pub async fn ws_handler(socket: WebSocket) {
     let mut serr = BufReader::new(process.stderr).lines();
 
     let artifact_prefix = artifact_dir.to_str().unwrap_or("\0\0NOPE");
+
+    let mut print_deadline = Instant::now();
     
     let result: HResult<()> = async {
         loop{
@@ -52,7 +54,6 @@ pub async fn ws_handler(socket: WebSocket) {
                         Some(Ok(Message::Text(msg))) => {
                             let input = serde_json::from_str::<'_, ClientMsg>(&msg)?;
                             match input{
-                                ClientMsg::Compile(_) => {},
                                 ClientMsg::Start => {},
                                 ClientMsg::Stop => break,
                                 ClientMsg::Input { switch, buttons } => {
@@ -110,8 +111,9 @@ pub async fn ws_handler(socket: WebSocket) {
                         }
                     }
                 }
-                _ = tokio::time::sleep(std::time::Duration::from_millis(30)) => {
+                _ = tokio::time::sleep_until(print_deadline) => {
                     use tokio::io::AsyncWriteExt;
+                    print_deadline += Duration::from_millis(30);
                     process.stdin.write_all("\n".as_bytes()).await?;
                 }
             }        

@@ -7,50 +7,307 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="dot"></div>
-      <div>
-        <div class="title">Circuit Web UI</div>
-        <div class="subtitle">LEDs • HEX • Switches • Buttons • circuit.vhdl</div>
-      </div>
-    </div>
-
-    <div class="controls">
-      <div class="status">
-        <span class="pill" id="wsPill">DISCONNECTED</span>
-        <span class="muted" id="wsUrlText"></span>
-      </div>
-
-      <!-- single toggle button now -->
-      <button id="connectToggleBtn">Connect</button>
-
-      <button id="sendInputsBtn" class="secondary" disabled>Send Inputs</button>
-    </div>
-  </header>
-
   <main class="grid">
-    <!-- Left: Editor -->
-    <section class="card editor">
+    <section id="editorSection" class="card editor">
       <div class="cardHeader">
-        <div class="cardTitle">circuit.vhdl</div>
+        <div class="cardTitle">VHDL</div>
         <div class="cardActions">
           <button id="loadExampleBtn" class="secondary">Load example</button>
         </div>
       </div>
 
-      <!-- NEW: editor with line-number gutter -->
       <div class="editorWrap">
         <pre id="lineGutter" class="lineGutter" aria-hidden="true"></pre>
         <textarea id="vhdlEditor" spellcheck="false"></textarea>
       </div>
+    </section>
 
-      <div class="hint">
-        Saved locally as you type. On <b>Connect</b>, the UI sends <code>{"circuit.vhdl": "..."}</code> as the first WebSocket message.
+        <section class="card inputs">
+      <div class="cardHeader cardHeaderWrap">
+        <div class="cardTitle">Inputs</div>
+
+        <div class="panelTopStatus">
+          <span class="pill state-disabled" id="statusPill">DISABLED</span>
+          <label class="modeToggle" for="modeToggle">
+            <span class="modeLabel">Local</span>
+            <input id="modeToggle" type="checkbox" aria-label="Toggle remote mode" />
+            <span class="modeSlider" aria-hidden="true"></span>
+            <span class="modeLabel">Remote</span>
+          </label>
+          <button id="connectToggleBtn">Connect</button>
+          <button id="runToggleBtn" class="secondary" disabled>Start</button>
+        </div>
+
+      </div>
+
+      <div class="twoCols">
+        <div class="block">
+          <div class="cardActions">
+            <button id="allSwOffBtn" class="secondary">All switches off</button>
+            <button id="allSwOnBtn" class="secondary">All switches on</button>
+          </div>
+          <div class="blockTitle">Switches (32, latched)</div>
+          <div id="switchGrid" class="ioGrid switchGrid">
+            <div class="ioCell">
+              <div class="toggle" data-bit="0" title="Toggle switch 0"></div>
+              <label>SW[0]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="1" title="Toggle switch 1"></div>
+              <label>SW[1]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="2" title="Toggle switch 2"></div>
+              <label>SW[2]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="3" title="Toggle switch 3"></div>
+              <label>SW[3]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="4" title="Toggle switch 4"></div>
+              <label>SW[4]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="5" title="Toggle switch 5"></div>
+              <label>SW[5]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="6" title="Toggle switch 6"></div>
+              <label>SW[6]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="7" title="Toggle switch 7"></div>
+              <label>SW[7]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="8" title="Toggle switch 8"></div>
+              <label>SW[8]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="9" title="Toggle switch 9"></div>
+              <label>SW[9]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="10" title="Toggle switch 10"></div>
+              <label>SW[10]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="11" title="Toggle switch 11"></div>
+              <label>SW[11]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="12" title="Toggle switch 12"></div>
+              <label>SW[12]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="13" title="Toggle switch 13"></div>
+              <label>SW[13]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="14" title="Toggle switch 14"></div>
+              <label>SW[14]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="15" title="Toggle switch 15"></div>
+              <label>SW[15]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="16" title="Toggle switch 16"></div>
+              <label>SW[16]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="17" title="Toggle switch 17"></div>
+              <label>SW[17]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="18" title="Toggle switch 18"></div>
+              <label>SW[18]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="19" title="Toggle switch 19"></div>
+              <label>SW[19]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="20" title="Toggle switch 20"></div>
+              <label>SW[20]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="21" title="Toggle switch 21"></div>
+              <label>SW[21]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="22" title="Toggle switch 22"></div>
+              <label>SW[22]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="23" title="Toggle switch 23"></div>
+              <label>SW[23]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="24" title="Toggle switch 24"></div>
+              <label>SW[24]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="25" title="Toggle switch 25"></div>
+              <label>SW[25]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="26" title="Toggle switch 26"></div>
+              <label>SW[26]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="27" title="Toggle switch 27"></div>
+              <label>SW[27]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="28" title="Toggle switch 28"></div>
+              <label>SW[28]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="29" title="Toggle switch 29"></div>
+              <label>SW[29]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="30" title="Toggle switch 30"></div>
+              <label>SW[30]</label>
+            </div>
+            <div class="ioCell">
+              <div class="toggle" data-bit="31" title="Toggle switch 31"></div>
+              <label>SW[31]</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="block">
+          <div class="blockTitle">Buttons (32, momentary)</div>
+
+          <div class="subBlockTitle">Standard BTN (0-7, 16-31)</div>
+          <div id="buttonGrid" class="ioGrid buttonGrid">
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="0" title="Momentary BTN 0"></button>
+              <label>BTN[0]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="1" title="Momentary BTN 1"></button>
+              <label>BTN[1]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="2" title="Momentary BTN 2"></button>
+              <label>BTN[2]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="3" title="Momentary BTN 3"></button>
+              <label>BTN[3]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="4" title="Momentary BTN 4"></button>
+              <label>BTN[4]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="5" title="Momentary BTN 5"></button>
+              <label>BTN[5]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="6" title="Momentary BTN 6"></button>
+              <label>BTN[6]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="7" title="Momentary BTN 7"></button>
+              <label>BTN[7]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="16" title="Momentary BTN 16"></button>
+              <label>BTN[16]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="17" title="Momentary BTN 17"></button>
+              <label>BTN[17]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="18" title="Momentary BTN 18"></button>
+              <label>BTN[18]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="19" title="Momentary BTN 19"></button>
+              <label>BTN[19]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="20" title="Momentary BTN 20"></button>
+              <label>BTN[20]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="21" title="Momentary BTN 21"></button>
+              <label>BTN[21]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="22" title="Momentary BTN 22"></button>
+              <label>BTN[22]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="23" title="Momentary BTN 23"></button>
+              <label>BTN[23]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="24" title="Momentary BTN 24"></button>
+              <label>BTN[24]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="25" title="Momentary BTN 25"></button>
+              <label>BTN[25]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="26" title="Momentary BTN 26"></button>
+              <label>BTN[26]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="27" title="Momentary BTN 27"></button>
+              <label>BTN[27]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="28" title="Momentary BTN 28"></button>
+              <label>BTN[28]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="29" title="Momentary BTN 29"></button>
+              <label>BTN[29]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="30" title="Momentary BTN 30"></button>
+              <label>BTN[30]</label>
+            </div>
+            <div class="ioCell">
+              <button class="momentary" type="button" data-bit="31" title="Momentary BTN 31"></button>
+              <label>BTN[31]</label>
+            </div>
+          </div>
+
+          <div class="subBlockTitle">4x4 Keypad Matrix via BTN (8-15)</div>
+          <div id="keypadGrid" class="keypadGrid">
+            <button class="momentary keypadBtn" type="button" data-row-bit="8" data-col-bit="12" data-key="7">7</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="8" data-col-bit="13" data-key="8">8</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="8" data-col-bit="14" data-key="9">9</button>
+            <button class="momentary keypadBtn op" type="button" data-row-bit="8" data-col-bit="15" data-key="/">/</button>
+
+            <button class="momentary keypadBtn" type="button" data-row-bit="9" data-col-bit="12" data-key="4">4</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="9" data-col-bit="13" data-key="5">5</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="9" data-col-bit="14" data-key="6">6</button>
+            <button class="momentary keypadBtn op" type="button" data-row-bit="9" data-col-bit="15" data-key="*">*</button>
+
+            <button class="momentary keypadBtn" type="button" data-row-bit="10" data-col-bit="12" data-key="1">1</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="10" data-col-bit="13" data-key="2">2</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="10" data-col-bit="14" data-key="3">3</button>
+            <button class="momentary keypadBtn op" type="button" data-row-bit="10" data-col-bit="15" data-key="-">-</button>
+
+            <button class="momentary keypadBtn" type="button" data-row-bit="11" data-col-bit="12" data-key="0">0</button>
+            <button class="momentary keypadBtn" type="button" data-row-bit="11" data-col-bit="13" data-key=".">.</button>
+            <button class="momentary keypadBtn op" type="button" data-row-bit="11" data-col-bit="14" data-key="=">=</button>
+            <button class="momentary keypadBtn op" type="button" data-row-bit="11" data-col-bit="15" data-key="+">+</button>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Right: IO -->
     <section class="card io">
       <div class="cardHeader">
         <div class="cardTitle">Outputs</div>
@@ -58,55 +315,480 @@
 
       <div class="outputs">
         <div class="block">
-          <div class="blockTitle">LEDs (32)</div>
-          <div id="ledRow" class="ledRow"></div>
-          <div class="bitLabelRow" id="ledLabels"></div>
+          <div id="ledRow" class="ledRow">
+            <div class="ledGroup">
+              <div class="led" data-bit="0" title="LED[0]"></div>
+              <div class="led" data-bit="1" title="LED[1]"></div>
+              <div class="led" data-bit="2" title="LED[2]"></div>
+              <div class="led" data-bit="3" title="LED[3]"></div>
+              <div class="led" data-bit="4" title="LED[4]"></div>
+              <div class="led" data-bit="5" title="LED[5]"></div>
+              <div class="led" data-bit="6" title="LED[6]"></div>
+              <div class="led" data-bit="7" title="LED[7]"></div>
+            </div>
+            <div class="ledGroup">
+              <div class="led" data-bit="8" title="LED[8]"></div>
+              <div class="led" data-bit="9" title="LED[9]"></div>
+              <div class="led" data-bit="10" title="LED[10]"></div>
+              <div class="led" data-bit="11" title="LED[11]"></div>
+              <div class="led" data-bit="12" title="LED[12]"></div>
+              <div class="led" data-bit="13" title="LED[13]"></div>
+              <div class="led" data-bit="14" title="LED[14]"></div>
+              <div class="led" data-bit="15" title="LED[15]"></div>
+            </div>
+            <div class="ledGroup">
+              <div class="led" data-bit="16" title="LED[16]"></div>
+              <div class="led" data-bit="17" title="LED[17]"></div>
+              <div class="led" data-bit="18" title="LED[18]"></div>
+              <div class="led" data-bit="19" title="LED[19]"></div>
+              <div class="led" data-bit="20" title="LED[20]"></div>
+              <div class="led" data-bit="21" title="LED[21]"></div>
+              <div class="led" data-bit="22" title="LED[22]"></div>
+              <div class="led" data-bit="23" title="LED[23]"></div>
+            </div>
+            <div class="ledGroup">
+              <div class="led" data-bit="24" title="LED[24]"></div>
+              <div class="led" data-bit="25" title="LED[25]"></div>
+              <div class="led" data-bit="26" title="LED[26]"></div>
+              <div class="led" data-bit="27" title="LED[27]"></div>
+              <div class="led" data-bit="28" title="LED[28]"></div>
+              <div class="led" data-bit="29" title="LED[29]"></div>
+              <div class="led" data-bit="30" title="LED[30]"></div>
+              <div class="led" data-bit="31" title="LED[31]"></div>
+            </div>
+          </div>
         </div>
 
         <div class="block">
-          <div class="blockTitle">HEX (4 digits, 7-seg + dp)</div>
-          <div id="hexRow" class="hexRow"></div>
-          <div class="hint small">
-            Assumes each digit is 8 bits: <code>bit0=a</code>, <code>1=b</code>, <code>2=c</code>, <code>3=d</code>, <code>4=e</code>, <code>5=f</code>, <code>6=g</code>, <code>7=dp</code>.
+          <div id="hexRow" class="hexRow">
+            <div class="hexGroup">
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="0">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[0]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="1">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[1]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="2">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[2]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="3">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[3]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="4">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[4]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="5">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[5]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="6">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[6]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="7">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[7]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="8">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[8]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="9">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[9]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="10">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[10]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="11">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[11]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="12">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[12]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="13">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[13]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="14">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[14]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="15">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[15]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="16">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[16]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="17">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[17]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="18">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[18]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="19">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[19]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="20">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[20]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="21">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[21]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="22">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[22]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="23">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[23]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="24">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[24]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="25">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[25]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="26">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[26]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="27">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[27]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="28">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[28]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="29">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[29]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="30">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[30]</div>
+            </div>
+            <div class="hexDigitWrap">
+              <div class="sevenSeg" data-digit="31">
+                <div class="seg a" data-seg="a"></div>
+                <div class="seg b" data-seg="b"></div>
+                <div class="seg c" data-seg="c"></div>
+                <div class="seg d" data-seg="d"></div>
+                <div class="seg e" data-seg="e"></div>
+                <div class="seg f" data-seg="f"></div>
+                <div class="seg g" data-seg="g"></div>
+                <div class="seg dp" data-seg="dp"></div>
+              </div>
+              <div class="digitLabel">SEG[31]</div>
+            </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Bottom-left: Inputs -->
-    <section class="card inputs">
-      <div class="cardHeader">
-        <div class="cardTitle">Inputs</div>
-        <div class="cardActions">
-          <button id="allSwOffBtn" class="secondary">All switches off</button>
-          <button id="allSwOnBtn" class="secondary">All switches on</button>
-        </div>
-      </div>
-
-      <div class="twoCols">
-        <div class="block">
-          <div class="blockTitle">Switches (32, latched)</div>
-          <div id="switchGrid" class="ioGrid"></div>
-        </div>
-
-        <div class="block">
-          <div class="blockTitle">Buttons (32, momentary)</div>
-          <div id="buttonGrid" class="ioGrid"></div>
-        </div>
-      </div>
-
-      <div class="hint">
-        Switches toggle a bit. Buttons set the bit while pressed (mouse/touch) and clear on release.
-      </div>
-    </section>
-
-    <!-- Bottom-right: Logs -->
     <section class="card logs">
       <div class="cardHeader">
         <div class="cardTitle">Logs</div>
         <div class="cardActions">
           <button id="clearLogBtn" class="secondary">Clear</button>
-          <button id="autoscrollBtn" class="secondary">Autoscroll: on</button>
         </div>
       </div>
 
@@ -114,6 +796,13 @@
     </section>
   </main>
 
+  <script>
+    // Optional runtime config hook:
+    // window.VHDL_UI_CONFIG = {
+    //   mode: "local" | "remote",
+    //   externalFiles: { "circuit.vhdl": "..." }
+    // };
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

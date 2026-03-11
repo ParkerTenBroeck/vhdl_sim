@@ -12,7 +12,7 @@ pub struct SimState{
 }
 
 static STATE: SimState = SimState{
-    switch: AtomicU32::new(512),
+    switch: AtomicU32::new(0),
     button: AtomicU32::new(0),
     led: AtomicU32::new(0),
     segs: [const{AtomicU32::new(0)}; 4],

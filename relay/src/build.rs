@@ -1,9 +1,9 @@
 use std::{
-    collections::HashMap,
-    ops::Deref,
-    path::{Path, PathBuf},
+    collections::HashMap, ffi::OsStr, ops::Deref, path::{Path, PathBuf}
 };
 use tokio::process::{Child, Command};
+
+use crate::HResult;
 
 async fn ensure_ok(child: Child) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let result = child.wait_with_output().await?;
@@ -43,9 +43,9 @@ impl AsRef<Path> for TempDir {
     }
 }
 
-pub async fn build(
+pub async fn copy_and_build(
     files: HashMap<String, String>,
-) -> Result<TempDir, Box<dyn std::error::Error + Send + Sync>> {
+) -> HResult<TempDir> {
     use std::hash::*;
     let mut hasher = std::hash::DefaultHasher::default();
     for (key, value) in &files {
@@ -56,7 +56,7 @@ pub async fn build(
 
     let mut work_dir = std::env::temp_dir();
     work_dir.push(format!("ghdl-relay-{hash:x?}"));
-    _ = std::fs::create_dir(&work_dir);
+    std::fs::create_dir_all(&work_dir)?;
     let work_dir = TempDir(work_dir);
 
     for (name, contents) in &files {
@@ -65,36 +65,51 @@ pub async fn build(
         std::fs::write(path, contents)?;
     }
 
-    let mut cmd = Command::new("ghdl");
+    build(&work_dir, &work_dir).await?;
+
+    Ok(work_dir)
+}
+
+
+pub async fn build(path: &Path, src: &Path) -> HResult<()>{
+    std::fs::create_dir_all(path)?;
+
+        let mut cmd = Command::new("ghdl");
     cmd.kill_on_drop(true);
-    cmd.args(["-a", "-g", "--std=08"]);
-    for name in files.keys() {
-        let mut path = work_dir.clone();
-        path.push(name);
-        cmd.arg(path);
+    cmd.args(["-i", "-g", "--std=08"]);
+
+    for file in src.read_dir().unwrap().flatten(){
+        if Path::new(&file.file_name()).extension() == Some(OsStr::new("vhdl")) {
+            cmd.arg(file.path());
+        }
     }
+
     cmd.arg(std::fs::canonicalize("../rtl/tb.vhdl")?);
 
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
-    cmd.current_dir(&work_dir);
+    cmd.current_dir(path);
     ensure_ok(cmd.spawn()?).await?;
+
+
+
+
 
     let mut cmd = Command::new("ghdl");
     cmd.kill_on_drop(true);
-    cmd.args(["-e", "--std=08"]);
+    cmd.args(["-m", "--std=08"]);
     cmd.arg(format!(
         "-Wl,{}",
-        std::fs::canonicalize("../conn/target/release/libvhdl_ui.a")?.display()
+        std::fs::canonicalize("../target/release/libvhdl_ui.a")?.display()
     ));
     cmd.arg("tb");
-    cmd.current_dir(&work_dir);
+    cmd.current_dir(path);
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
     ensure_ok(cmd.spawn()?).await?;
-
-    Ok(work_dir)
+    
+    Ok(())
 }

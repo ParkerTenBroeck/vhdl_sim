@@ -5,42 +5,14 @@ use futures_util::{
     SinkExt, StreamExt,
     stream::{SplitSink, SplitStream},
 };
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 use tokio::{
     io::{AsyncBufReadExt, BufReader, Lines},
-    process::{Child, ChildStderr, ChildStdin, ChildStdout},
+    process::{Child, ChildStderr, ChildStdin, ChildStdout}, time::Instant,
 };
 
-use crate::{build, run};
+use crate::{ClientMsg, ServerMsg, build, run};
 
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum ClientMsg {
-    Compile(Option<HashMap<String, String>>),
-    Start,
-    Stop,
-    Input {
-        /// bitfield of 32 switches
-        switch: u32,
-        /// bitfield of 32 buttons
-        buttons: u32,
-    },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum ServerMsg<'a> {
-    Log { stream: &'a str, line: &'a str },
-    Start,
-    Stop,
-    Led(u32),
-    Seg0(u32),
-    Seg1(u32),
-    Seg2(u32),
-    Seg3(u32),
-}
 
 struct Process {
     process: Child,
@@ -50,10 +22,6 @@ struct Process {
     stdin: ChildStdin,
 }
 
-enum Mode {
-    SingleLocal,
-    Remote,
-}
 
 struct Handler {
     sender: SplitSink<WebSocket, Message>,
@@ -68,11 +36,9 @@ struct Handler {
     refresh_time: Duration,
 }
 
-type HResult<T> = Result<T, Box<dyn std::error::Error + Sync + Send>>;
-
 impl Handler {
 
-    async fn local(socket: WebSocket, build: PathBuf, src: PathBuf) -> Self {
+    fn local(socket: WebSocket, build: PathBuf, src: PathBuf) -> Self {
         let (sender, receiver) = socket.split();
         Self {
             sender,
@@ -108,20 +74,18 @@ impl Handler {
         _ = self.sender.send(Message::Text(serde_json::to_string(&ServerMsg::Stop).unwrap_or_default().into())).await;
     }
 
-    async fn handle_websocket_msg(&mut self, msg: ClientMsg) -> HResult<bool> {
+    async fn handle_websocket_msg(&mut self, msg: ClientMsg) {
         match msg{
-            ClientMsg::Compile(_) => todo!(),
             ClientMsg::Start => self.run_program().await,
             ClientMsg::Stop => self.stop_process().await,
             ClientMsg::Input { switch, buttons } => {
                 if let Some(process) = &mut self.process{
                     use tokio::io::AsyncWriteExt;
-                    process.stdin.write_all(format!("btn={}\n", buttons).as_bytes()).await?;
-                    process.stdin.write_all(format!("sw={}\n", switch).as_bytes()).await?;
+                    _ = process.stdin.write_all(format!("btn={}\n", buttons).as_bytes()).await;
+                    _ = process.stdin.write_all(format!("sw={}\n", switch).as_bytes()).await;
                 }
             },
         }
-        Ok(false)
     }
 
     async fn handle_websocket_receive(
@@ -150,13 +114,16 @@ impl Handler {
         }
     }
 
-    async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+    async fn run(&mut self) {
         loop {
             if let Some(process) = &mut self.process {
                 if let Ok(Some(_)) = process.process.try_wait(){
                     self.stop_process().await;
                     continue;
                 }
+
+                let mut print_deadline = Instant::now();
+
                 tokio::select! {
                     receive = self.receiver.next() => {
                         if self.handle_websocket_receive(receive).await{
@@ -190,7 +157,7 @@ impl Handler {
                                     self.eprint(line).await;
                                     continue;
                                 };
-                                self.sender.send(Message::Text(serde_json::to_string(&msg)?.into())).await?;
+                                _ = self.sender.send(Message::Text(serde_json::to_string(&msg).unwrap_or_default().into())).await;
                             },
                             Ok(None) => self.stop_process().await,
                             Err(err) => {
@@ -199,8 +166,9 @@ impl Handler {
                             }
                         }
                     }
-                    _ = tokio::time::sleep(self.refresh_time) => {
+                    _ = tokio::time::sleep_until(print_deadline) => {
                         use tokio::io::AsyncWriteExt;
+                        print_deadline += self.refresh_time;
                         _ = process.stdin.write_all("\n".as_bytes()).await;
                     }
                 }
@@ -211,20 +179,12 @@ impl Handler {
                 }
             }
         }
-        Ok(())
     }
 
-    async fn build_program(&mut self) {
-        let files = if let Some(Ok(Message::Text(msg))) = self.receiver.next().await
-            && let Ok(files) = serde_json::from_str::<'_, HashMap<String, String>>(&msg)
-        {
-            files
-        } else {
-            return;
-        };
+    async fn run_program(&mut self) {        
 
-        let artifact_dir = match build::build(files).await {
-            Ok(dir) => dir,
+        match build::build(&self.build_dir, &self.src_dir).await {
+            Ok(_) => {},
             Err(err) => {
                 _ = self
                     .sender
@@ -233,9 +193,7 @@ impl Handler {
                 return;
             }
         };
-    }
 
-    async fn run_program(&mut self) {
         let process = match run::run(&self.build_dir).await {
             Ok(process) => process,
             Err(err) => {
@@ -247,6 +205,7 @@ impl Handler {
         let stderr = BufReader::new(process.stderr).lines();
         let stdin = process.stdin;
 
+        _ = self.sender.send(Message::Text(serde_json::to_string(&ServerMsg::Start).unwrap_or_default().into())).await;
         self.process = Some(
             Process { process: process.child, stderr, stdout, stdin }
         )
@@ -254,5 +213,5 @@ impl Handler {
 }
 
 pub async fn ws_handler(socket: WebSocket) {
-    Handler::local(socket, "target".into(), "src".into());
+    Handler::local(socket, "../target".into(), "../src".into()).run().await;
 }
