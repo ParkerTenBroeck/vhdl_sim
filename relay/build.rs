@@ -40,8 +40,8 @@ fn main() {
     let out_release_dir = workspace_root.join("target").join("release");
     std::fs::create_dir_all(&out_release_dir).expect("failed to create workspace target/release");
 
-    // conn currently builds as libconn.a; keep a compatibility alias for relay/src/build.rs (libvhdl_ui.a).
-    let src_lib = isolated_release_dir.join("libconn.a");
+    // conn currently builds as libvhdl_conn.a; keep a compatibility alias for relay/src/build.rs (libvhdl_ui.a).
+    let src_lib = isolated_release_dir.join("libvhdl_conn.a");
     if !src_lib.exists() {
         panic!(
             "build script failed: expected static library not found at {}",
