@@ -37,7 +37,7 @@ struct Handler {
 
 impl Handler {
 
-    fn local(socket: WebSocket, build: PathBuf, src: PathBuf) -> Self {
+    fn local(socket: WebSocket, build: PathBuf, src: PathBuf, refresh_time: Duration) -> Self {
         let (sender, receiver) = socket.split();
         Self {
             sender,
@@ -45,7 +45,7 @@ impl Handler {
             build_dir: build,
             src_dir: src,
             process: None,
-            refresh_time: Duration::from_millis(30),
+            refresh_time,
         }
     }
 
@@ -207,6 +207,6 @@ impl Handler {
     }
 }
 
-pub async fn ws_handler(socket: WebSocket) {
-    Handler::local(socket, "../target".into(), "../src".into()).run().await;
+pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
+    Handler::local(socket, "../target".into(), "../src".into(), refresh_time).run().await;
 }

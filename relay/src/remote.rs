@@ -11,7 +11,7 @@ use tokio::{
 
 use crate::{ClientMsg, HResult, ServerMsg, build, run};
 
-pub async fn ws_handler(socket: WebSocket) {
+pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
     let (mut sender, mut receiver) = socket.split();
 
     let files = if let Some(Ok(Message::Text(msg))) = receiver.next().await
@@ -113,7 +113,7 @@ pub async fn ws_handler(socket: WebSocket) {
                 }
                 _ = tokio::time::sleep_until(print_deadline) => {
                     use tokio::io::AsyncWriteExt;
-                    print_deadline += Duration::from_millis(30);
+                    print_deadline += refresh_time;
                     process.stdin.write_all("\n".as_bytes()).await?;
                 }
             }        
