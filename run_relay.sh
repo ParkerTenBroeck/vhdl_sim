@@ -3,5 +3,5 @@ set -euo pipefail
 
 
 pushd relay >/dev/null
-cargo run --release -- "$@"
+cargo +nightly run -Z bindeps --release -- "$@"
 popd >/dev/null

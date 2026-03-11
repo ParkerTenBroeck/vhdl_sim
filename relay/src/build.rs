@@ -5,8 +5,7 @@ use tokio::process::{Child, Command};
 
 use crate::HResult;
 
-const EMBEDDED_VHDL_UI_LIB: &[u8] =
-    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../target/release/libvhdl_conn.a"));
+const EMBEDDED_VHDL_UI_LIB: &[u8] = include_bytes!(env!("EMBEDDED_VHDL_CONN_LIB_PATH"));
 
 async fn ensure_ok(child: Child) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let result = child.wait_with_output().await?;
