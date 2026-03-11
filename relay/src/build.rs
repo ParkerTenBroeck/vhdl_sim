@@ -5,6 +5,9 @@ use tokio::process::{Child, Command};
 
 use crate::HResult;
 
+const EMBEDDED_VHDL_UI_LIB: &[u8] =
+    include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../target/release/libvhdl_conn.a"));
+
 async fn ensure_ok(child: Child) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let result = child.wait_with_output().await?;
     if !result.status.success() {
@@ -73,6 +76,8 @@ pub async fn copy_and_build(
 
 pub async fn build(path: &Path, src: &Path) -> HResult<()>{
     std::fs::create_dir_all(path)?;
+    let embedded_lib_path = path.join("libvhdl_conn.a");
+    std::fs::write(&embedded_lib_path, EMBEDDED_VHDL_UI_LIB)?;
 
         let mut cmd = Command::new("ghdl");
     cmd.kill_on_drop(true);
@@ -102,7 +107,7 @@ pub async fn build(path: &Path, src: &Path) -> HResult<()>{
     cmd.args(["-m", "--std=08"]);
     cmd.arg(format!(
         "-Wl,{}",
-        std::fs::canonicalize("../target/release/libvhdl_ui.a")?.display()
+        embedded_lib_path.display()
     ));
     cmd.arg("tb");
     cmd.current_dir(path);

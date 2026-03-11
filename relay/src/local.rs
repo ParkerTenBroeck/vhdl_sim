@@ -30,7 +30,6 @@ struct Handler {
     build_dir: PathBuf,
     src_dir: PathBuf,
 
-    program: Option<PathBuf>,
     process: Option<Process>,
 
     refresh_time: Duration,
@@ -45,7 +44,6 @@ impl Handler {
             receiver,
             build_dir: build,
             src_dir: src,
-            program: None,
             process: None,
             refresh_time: Duration::from_millis(30),
         }
@@ -186,10 +184,7 @@ impl Handler {
         match build::build(&self.build_dir, &self.src_dir).await {
             Ok(_) => {},
             Err(err) => {
-                _ = self
-                    .sender
-                    .send(Message::Text(format!("Failed to build: {err}").into()))
-                    .await;
+                _ = self.eprint(format!("Failed to build: {err}")).await;
                 return;
             }
         };

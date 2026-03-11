@@ -1,2 +1,3 @@
 [workspace]
-members = ["conn", "relay"]
+members = ["libvhdl_conn", "relay"]
+resolver = "3"
