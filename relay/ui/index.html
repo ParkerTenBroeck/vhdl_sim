@@ -29,10 +29,10 @@
         <div class="panelTopStatus">
           <span class="pill state-disabled" id="statusPill">DISABLED</span>
           <label class="modeToggle" for="modeToggle">
-            <span class="modeLabel">Local</span>
-            <input id="modeToggle" type="checkbox" aria-label="Toggle remote mode" />
+            <span class="modeLabel">Workspace</span>
+            <input id="modeToggle" type="checkbox" aria-label="Toggle uploaded mode" />
             <span class="modeSlider" aria-hidden="true"></span>
-            <span class="modeLabel">Remote</span>
+            <span class="modeLabel">Uploaded</span>
           </label>
           <button id="connectToggleBtn">Connect</button>
           <button id="runToggleBtn" class="secondary" disabled>Start</button>
@@ -796,13 +796,6 @@
     </section>
   </main>
 
-  <script>
-    // Optional runtime config hook:
-    // window.VHDL_UI_CONFIG = {
-    //   mode: "local" | "remote",
-    //   externalFiles: { "circuit.vhdl": "..." }
-    // };
-  </script>
   <script src="app.js"></script>
 </body>
 </html>

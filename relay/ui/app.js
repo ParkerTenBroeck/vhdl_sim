@@ -648,7 +648,7 @@ class CircuitUiApp {
 
     this.editor = new EditorController({
       ...this.dom,
-      enabled: config.initialMode === "local",
+      enabled: config.initialMode === "uploaded",
       externalFiles: config.externalFiles,
     });
 
@@ -670,7 +670,7 @@ class CircuitUiApp {
         this.outputs.resetVisuals();
       },
       onOpen: () => {
-        if (this.mode === "local") {
+        if (this.mode === "uploaded") {
           this.connection.send(this.editor.getFilesPayload());
         }
         this.connection.send({ input: this.inputs.getInputPayload() });
@@ -705,7 +705,7 @@ class CircuitUiApp {
         this.setRunButtonEnabled(false);
         this.setRunning(false);
         this.updateStatusIndicator();
-        if (this.mode === "remote") {
+        if (this.mode === "workspace") {
           this.scheduleReconnect();
         }
       },
@@ -741,13 +741,14 @@ class CircuitUiApp {
 
   wireModeControls() {
     this.dom.modeToggle.addEventListener("change", () => {
-      const nextMode = this.dom.modeToggle.checked ? "remote" : "local";
+      const nextMode = this.dom.modeToggle.checked ? "uploaded" : "workspace";
       this.applyMode(nextMode);
     });
   }
 
   applyMode(nextMode, fromInit = false) {
-    const mode = nextMode === "remote" ? "remote" : "local";
+    const mode =
+      nextMode === "workspace" && this.config.workspaceEnabled ? "workspace" : "uploaded";
     const changed = this.mode !== mode;
 
     if (!fromInit && changed && this.connection.isConnected()) {
@@ -759,13 +760,14 @@ class CircuitUiApp {
       localStorage.setItem(LS_KEY_MODE, mode);
     } catch {}
 
-    const isRemote = mode === "remote";
-    this.dom.modeToggle.checked = isRemote;
-    this.editor.setEnabled(!isRemote);
-    this.dom.connectToggleBtn.classList.toggle("is-hidden", isRemote);
-    this.dom.runToggleBtn.classList.toggle("is-hidden", !isRemote);
+    const isUploaded = mode === "uploaded";
+    this.dom.modeToggle.checked = isUploaded;
+    this.dom.modeToggle.disabled = !this.config.workspaceEnabled;
+    this.editor.setEnabled(isUploaded);
+    this.dom.connectToggleBtn.classList.toggle("is-hidden", !isUploaded);
+    this.dom.runToggleBtn.classList.toggle("is-hidden", isUploaded);
 
-    if (isRemote) {
+    if (!isUploaded) {
       this.scheduleReconnect(0);
     } else {
       this.cancelReconnect();
@@ -831,27 +833,29 @@ function resolveConfig() {
   const config = window.VHDL_UI_CONFIG ?? {};
   const query = new URLSearchParams(location.search);
   const queryMode = (query.get("mode") ?? "").toLowerCase();
+  const workspaceEnabled = config.workspaceEnabled !== false;
 
   let storedMode = "";
   try {
     storedMode = (localStorage.getItem(LS_KEY_MODE) ?? "").toLowerCase();
   } catch {}
 
-  let initialMode = "local";
-  if (queryMode === "local" || queryMode === "remote") {
+  let initialMode = workspaceEnabled ? "workspace" : "uploaded";
+  if (queryMode === "workspace" || queryMode === "uploaded") {
     initialMode = queryMode;
-  } else if (storedMode === "local" || storedMode === "remote") {
+  } else if (storedMode === "workspace" || storedMode === "uploaded") {
     initialMode = storedMode;
-  } else if (config.mode === "local" || config.mode === "remote") {
+  } else if (config.mode === "workspace" || config.mode === "uploaded") {
     initialMode = config.mode;
   } else if (query.has("externalEditor")) {
-    initialMode = parseBoolean(query.get("externalEditor")) ? "remote" : "local";
+    initialMode = parseBoolean(query.get("externalEditor")) ? "uploaded" : "workspace";
   } else if (parseBoolean(config.externalEditor)) {
-    initialMode = "remote";
+    initialMode = "uploaded";
   }
 
   return {
-    initialMode,
+    initialMode: initialMode === "workspace" && !workspaceEnabled ? "uploaded" : initialMode,
+    workspaceEnabled,
     externalFiles: config.externalFiles ?? null,
   };
 }

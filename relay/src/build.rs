@@ -6,6 +6,7 @@ use tokio::process::{Child, Command};
 use crate::HResult;
 
 const EMBEDDED_VHDL_UI_LIB: &[u8] = include_bytes!(env!("EMBEDDED_VHDL_CONN_LIB_PATH"));
+const EMBEDDED_TB_VHDL: &str = include_str!("../../rtl/tb.vhdl");
 
 async fn ensure_ok(child: Child) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let result = child.wait_with_output().await?;
@@ -73,10 +74,12 @@ pub async fn copy_and_build(
 }
 
 
-pub async fn build(path: &Path, src: &Path) -> HResult<()>{
-    std::fs::create_dir_all(path)?;
-    let embedded_lib_path = path.join("libvhdl_conn.a");
+pub async fn build(build: &Path, src: &Path) -> HResult<()>{
+    std::fs::create_dir_all(build)?;
+    let embedded_lib_path = build.join("libvhdl_conn.a");
+    let embedded_tb_path = build.join("tb.vhdl");
     std::fs::write(&embedded_lib_path, EMBEDDED_VHDL_UI_LIB)?;
+    std::fs::write(&embedded_tb_path, EMBEDDED_TB_VHDL)?;
 
         let mut cmd = Command::new("ghdl");
     cmd.kill_on_drop(true);
@@ -84,21 +87,17 @@ pub async fn build(path: &Path, src: &Path) -> HResult<()>{
 
     for file in src.read_dir().unwrap().flatten(){
         if Path::new(&file.file_name()).extension() == Some(OsStr::new("vhdl")) {
-            cmd.arg(file.path());
+            cmd.arg(file.path().canonicalize()?);
         }
     }
-
-    cmd.arg(std::fs::canonicalize("../rtl/tb.vhdl")?);
+    cmd.arg(&embedded_tb_path.canonicalize()?);
 
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
 
-    cmd.current_dir(path);
+    cmd.current_dir(build);
     ensure_ok(cmd.spawn()?).await?;
-
-
-
 
 
     let mut cmd = Command::new("ghdl");
@@ -106,10 +105,10 @@ pub async fn build(path: &Path, src: &Path) -> HResult<()>{
     cmd.args(["-m", "--std=08"]);
     cmd.arg(format!(
         "-Wl,{}",
-        embedded_lib_path.display()
+        embedded_lib_path.canonicalize()?.display()
     ));
     cmd.arg("tb");
-    cmd.current_dir(path);
+    cmd.current_dir(build);
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());

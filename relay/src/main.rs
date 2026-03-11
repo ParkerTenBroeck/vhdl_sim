@@ -13,16 +13,12 @@ use std::{
 
 pub mod build;
 pub mod run;
-pub mod local;
-pub mod remote;
+pub mod uploaded;
+pub mod workspace;
 
 const UI_INDEX_HTML: &str = include_str!("../ui/index.html");
 const UI_STYLES_CSS: &str = include_str!("../ui/styles.css");
 const UI_APP_JS: &str = include_str!("../ui/app.js");
-
-async fn serve_index() -> impl IntoResponse {
-    Html(UI_INDEX_HTML)
-}
 
 async fn serve_styles() -> impl IntoResponse {
     (
@@ -38,6 +34,10 @@ async fn serve_app_js() -> impl IntoResponse {
     )
 }
 
+async fn serve_index() -> impl IntoResponse {
+    Html(UI_INDEX_HTML)
+}
+
 async fn not_found() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "not found")
 }
@@ -47,6 +47,7 @@ struct Config {
     ip: IpAddr,
     port: u16,
     update_ms: u64,
+    workspace_ws: bool,
 }
 
 impl Default for Config {
@@ -55,6 +56,7 @@ impl Default for Config {
             ip: IpAddr::from([127, 0, 0, 1]),
             port: 8080,
             update_ms: 30,
+            workspace_ws: true,
         }
     }
 }
@@ -84,12 +86,17 @@ fn parse_config_from_args() -> Result<Config, String> {
                     .parse::<u64>()
                     .map_err(|err| format!("invalid --update-ms `{value}`: {err}"))?;
             }
+            "--workspace" => {
+                cfg.workspace_ws = true;
+            }
             "--help" | "-h" => {
-                return Err("usage: relay [--ip <ip>] [--port <port>] [--update-ms <ms>]".into());
+                return Err(
+                    "usage: relay [--ip <ip>] [--port <port>] [--update-ms <ms>] [--workspace]".into(),
+                );
             }
             _ => {
                 return Err(format!(
-                    "unknown argument `{arg}`\nusage: relay [--ip <ip>] [--port <port>] [--update-ms <ms>]"
+                    "unknown argument `{arg}`\nusage: relay [--ip <ip>] [--port <port>] [--update-ms <ms>] [--workspace]"
                 ));
             }
         }
@@ -109,39 +116,44 @@ async fn main() {
     };
 
     let update_interval = Duration::from_millis(cfg.update_ms);
-    let app = Router::new()
-        .route("/", get(serve_index))
-        .route("/index.html", get(serve_index))
+    let mut app = Router::new()
+        .route(
+            "/",
+            get(move || {
+                async move { serve_index().await }
+            }),
+        )
+        .route(
+            "/index.html",
+            get(move || {
+                async move { serve_index().await }
+            }),
+        )
         .route("/styles.css", get(serve_styles))
         .route("/app.js", get(serve_app_js))
         .route(
-            "/ws/remote",
+            "/ws/uploaded",
             get(move |ws: WebSocketUpgrade| {
                 let update_interval = update_interval;
                 async move {
-                    ws.on_upgrade(move |socket| remote::ws_handler(socket, update_interval))
+                    ws.on_upgrade(move |socket| uploaded::ws_handler(socket, update_interval))
                 }
             }),
-        )
-        .route(
-            "/ws/local",
+        );
+
+    if cfg.workspace_ws {
+        app = app.route(
+            "/ws/workspace",
             get(move |ws: WebSocketUpgrade| {
                 let update_interval = update_interval;
                 async move {
-                    ws.on_upgrade(move |socket| local::ws_handler(socket, update_interval))
+                    ws.on_upgrade(move |socket| workspace::ws_handler(socket, update_interval))
                 }
             }),
-        )
-        .route(
-            "/ws",
-            get(move |ws: WebSocketUpgrade| {
-                let update_interval = update_interval;
-                async move {
-                    ws.on_upgrade(move |socket| remote::ws_handler(socket, update_interval))
-                }
-            }),
-        )
-        .fallback(get(not_found));
+        );
+    }
+
+    app = app.fallback(get(not_found));
 
     let addr = SocketAddr::new(cfg.ip, cfg.port);
     println!("Open UI: http://{}/", addr);
