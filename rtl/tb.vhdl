@@ -90,11 +90,11 @@ begin
       btn <= std_logic_vector(to_signed(btn_i, 32));
 
       ffi_set_outputs(
-          to_integer(unsigned(clean_slv(led))),
-          to_integer(unsigned(clean_slv(seg0))),
-          to_integer(unsigned(clean_slv(seg1))),
-          to_integer(unsigned(clean_slv(seg2))),
-          to_integer(unsigned(clean_slv(seg3)))
+          to_integer(signed(clean_slv(led))),
+          to_integer(signed(clean_slv(seg0))),
+          to_integer(signed(clean_slv(seg1))),
+          to_integer(signed(clean_slv(seg2))),
+          to_integer(signed(clean_slv(seg3)))
       );
     end loop;
   end process;
