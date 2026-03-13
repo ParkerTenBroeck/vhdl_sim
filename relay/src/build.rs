@@ -129,7 +129,7 @@ async fn build_with_verilator(
 
     let mut cmd = Command::new("verilator");
     cmd.kill_on_drop(true);
-    cmd.args(["--cc", "--exe", "--top-module", "circuit", "--Mdir"]);
+    cmd.args(["--cc", "--exe", "--autoflush", "--top-module", "circuit", "--Mdir"]);
     cmd.arg(&obj_dir);
     cmd.args(["-o", "tb"]);
     cmd.args([

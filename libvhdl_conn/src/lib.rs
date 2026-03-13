@@ -86,7 +86,7 @@ pub extern "C" fn ffi_set_outputs(led: u32, segv: u32, segs: u32) {
 
     if let Some(place) = STATE.segs.get(segs as usize) {
         let seg = place.swap(segv, Ordering::Relaxed) != segv;
-        to_set |= (seg as u32 + 1) << segs
+        to_set |= (seg as u32) << (segs+1)
     }
 
     STATE.updated.fetch_or(to_set, Ordering::Relaxed);
