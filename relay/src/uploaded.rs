@@ -1,12 +1,9 @@
-use axum::{
-    extract::ws::{Message, WebSocket},
-};
-use futures_util::{
-    SinkExt, StreamExt,
-};
+use axum::extract::ws::{Message, WebSocket};
+use futures_util::{SinkExt, StreamExt};
 use std::{collections::HashMap, time::Duration};
 use tokio::{
-    io::{AsyncBufReadExt, BufReader}, time::Instant,
+    io::{AsyncBufReadExt, BufReader},
+    time::Instant,
 };
 
 use crate::{ClientMsg, HResult, ServerMsg, build, run};
@@ -16,27 +13,30 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
 
     let files = if let Some(Ok(Message::Text(msg))) = receiver.next().await
         && let Ok(files) = serde_json::from_str::<'_, HashMap<String, String>>(&msg)
-    {  
+    {
         files
     } else {
         return;
     };
 
-
-    let artifact_dir = match build::copy_and_build(files).await{
+    let artifact_dir = match build::copy_and_build(files).await {
         Ok(dir) => dir,
         Err(err) => {
-            _ = sender.send(Message::Text(format!("Failed to build: {err}").into())).await;
+            _ = sender
+                .send(Message::Text(format!("Failed to build: {err}").into()))
+                .await;
             return;
-        },
+        }
     };
 
-    let mut process = match run::run(&artifact_dir).await{
+    let mut process = match run::run(&artifact_dir).await {
         Ok(process) => process,
         Err(err) => {
-            _ = sender.send(Message::Text(format!("Failed to run: {err}").into())).await;
+            _ = sender
+                .send(Message::Text(format!("Failed to run: {err}").into()))
+                .await;
             return;
-        },
+        }
     };
     let mut sout = BufReader::new(process.stdout).lines();
     let mut serr = BufReader::new(process.stderr).lines();
@@ -44,7 +44,7 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
     let artifact_prefix = artifact_dir.to_str().unwrap_or("\0\0NOPE");
 
     let mut print_deadline = Instant::now();
-    
+
     let result: HResult<()> = async {
         loop{
             tokio::select! {
@@ -89,14 +89,12 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
                         Ok(Some(line)) => {
                             let msg = if let Some(repr) = line.strip_prefix("led="){
                                 ServerMsg::Led(repr.parse().unwrap_or(0))
-                            }else if let Some(repr) = line.strip_prefix("seg0="){
-                                ServerMsg::Seg0(repr.parse().unwrap_or(0))
-                            }else if let Some(repr) = line.strip_prefix("seg1="){
-                                ServerMsg::Seg1(repr.parse().unwrap_or(0))
-                            }else if let Some(repr) = line.strip_prefix("seg2="){
-                                ServerMsg::Seg2(repr.parse().unwrap_or(0))
-                            }else if let Some(repr) = line.strip_prefix("seg3="){
-                                ServerMsg::Seg3(repr.parse().unwrap_or(0))
+                            }else if let Some(repr) = line.strip_prefix("seg=") 
+                                    && let Some((val, idx)) = repr.split_once(";") {
+                                ServerMsg::Seg{
+                                    value: val.parse().unwrap_or(0),
+                                    index: idx.parse().unwrap_or(0)
+                                }
                             }else{
                                 ServerMsg::Log {
                                     stream: "stderr",
@@ -121,10 +119,10 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
         Ok(())
     }.await;
 
-    match result{
-        Ok(_) => {},
+    match result {
+        Ok(_) => {}
         Err(err) => {
             _ = sender.send(Message::Text(format!("{err}").into())).await;
-        },
+        }
     }
 }

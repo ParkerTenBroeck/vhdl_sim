@@ -12,10 +12,8 @@ port (
   btn: in std_logic_vector(31 downto 0);
   sw: in std_logic_vector(31 downto 0);
   led: out std_logic_vector(31 downto 0) := (others => '0');
-  seg0: out std_logic_vector(31 downto 0);
-  seg1: out std_logic_vector(31 downto 0);
-  seg2: out std_logic_vector(31 downto 0);
-  seg3: out std_logic_vector(31 downto 0)
+  segv: out std_logic_vector(31 downto 0);
+  segs: out std_logic_vector(31 downto 0)
   );
 end circuit;
 
@@ -250,6 +248,8 @@ class OutputController {
   constructor({ ledRow, hexRow }) {
     this.ledRow = ledRow;
     this.hexRow = hexRow;
+    // Each backend segN value encodes 4 seven-segment displays, one byte each.
+    this.segDisplaysPerGroup = 4;
 
     this.ledEls = Array.from(this.ledRow.querySelectorAll(".led[data-bit]"));
     this.segDisplays = Array.from(this.hexRow.querySelectorAll(".sevenSeg[data-digit]"));
@@ -275,37 +275,12 @@ class OutputController {
       return true;
     }
 
-    let handledSegment = false;
-
-    // Row mapping:
-    // seg0 -> displays 0..7
-    // seg1 -> displays 8..15
-    // seg2 -> displays 16..23
-    // seg3 -> displays 24..31
-    for (let row = 0; row < 4; row += 1) {
-      const key = `seg${row}`;
-      if (parsed[key] === undefined) continue;
-
-      const rowBytes = parseSegRowBytes(parsed[key]);
-      if (!rowBytes) continue;
-
-      this.setSegRow(row, rowBytes);
-      handledSegment = true;
-    }
-
-    // Backward-compat path for a single 32-bit value (fills first 4 displays).
-    if (!handledSegment && parsed.seg !== undefined) {
-      const bytes = parseHexDigits(Number(parsed.seg) >>> 0);
-      this.setSegRow(0, bytes);
-      handledSegment = true;
-    }
-
-    if (handledSegment) {
+    if (parsed.seg !== undefined){
+      const groupBytes = parseSegRowBytes(parsed.seg.value);
+      this.setSegGroup(parsed.seg.index, groupBytes);
       this.renderAllSegments();
       return true;
     }
-
-    return false;
   }
 
   setLeds(bitsU32) {
@@ -329,9 +304,9 @@ class OutputController {
     }
   }
 
-  setSegRow(rowIndex, bytes) {
-    const base = rowIndex * 8;
-    for (let i = 0; i < 8; i += 1) {
+  setSegGroup(groupIndex, bytes) {
+    const base = groupIndex * this.segDisplaysPerGroup;
+    for (let i = 0; i < this.segDisplaysPerGroup; i += 1) {
       const dst = base + i;
       if (dst >= this.segBytes.length) break;
       this.segBytes[dst] = bytes[i] & 0xff;

@@ -9,10 +9,8 @@ port (
   btn: in std_logic_vector(31 downto 0);
   sw: in std_logic_vector(31 downto 0);
   led: out std_logic_vector(31 downto 0) := (others => '0');
-  seg0: out std_logic_vector(31 downto 0);
-  seg1: out std_logic_vector(31 downto 0);
-  seg2: out std_logic_vector(31 downto 0);
-  seg3: out std_logic_vector(31 downto 0)
+  segv: out std_logic_vector(31 downto 0);
+  segs: out std_logic_vector(31 downto 0)
   );
 end circuit;
 

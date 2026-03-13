@@ -29,7 +29,10 @@ async fn serve_styles() -> impl IntoResponse {
 
 async fn serve_app_js() -> impl IntoResponse {
     (
-        [(header::CONTENT_TYPE, "application/javascript; charset=utf-8")],
+        [(
+            header::CONTENT_TYPE,
+            "application/javascript; charset=utf-8",
+        )],
         UI_APP_JS,
     )
 }
@@ -91,7 +94,8 @@ fn parse_config_from_args() -> Result<Config, String> {
             }
             "--help" | "-h" => {
                 return Err(
-                    "usage: relay [--ip <ip>] [--port <port>] [--update-ms <ms>] [--workspace]".into(),
+                    "usage: relay [--ip <ip>] [--port <port>] [--update-ms <ms>] [--workspace]"
+                        .into(),
                 );
             }
             _ => {
@@ -116,30 +120,24 @@ async fn main() {
     };
 
     let update_interval = Duration::from_millis(cfg.update_ms);
-    let mut app = Router::new()
-        .route(
-            "/",
-            get(move || {
-                async move { serve_index().await }
-            }),
-        )
-        .route(
-            "/index.html",
-            get(move || {
-                async move { serve_index().await }
-            }),
-        )
-        .route("/styles.css", get(serve_styles))
-        .route("/app.js", get(serve_app_js))
-        .route(
-            "/ws/uploaded",
-            get(move |ws: WebSocketUpgrade| {
-                let update_interval = update_interval;
-                async move {
-                    ws.on_upgrade(move |socket| uploaded::ws_handler(socket, update_interval))
-                }
-            }),
-        );
+    let mut app =
+        Router::new()
+            .route("/", get(move || async move { serve_index().await }))
+            .route(
+                "/index.html",
+                get(move || async move { serve_index().await }),
+            )
+            .route("/styles.css", get(serve_styles))
+            .route("/app.js", get(serve_app_js))
+            .route(
+                "/ws/uploaded",
+                get(move |ws: WebSocketUpgrade| {
+                    let update_interval = update_interval;
+                    async move {
+                        ws.on_upgrade(move |socket| uploaded::ws_handler(socket, update_interval))
+                    }
+                }),
+            );
 
     if cfg.workspace_ws {
         app = app.route(
@@ -183,10 +181,7 @@ pub enum ServerMsg<'a> {
     Start,
     Stop,
     Led(u32),
-    Seg0(u32),
-    Seg1(u32),
-    Seg2(u32),
-    Seg3(u32),
+    Seg { value: u32, index: u32 },
 }
 
 pub type HResult<T> = Result<T, Box<dyn std::error::Error + Sync + Send>>;

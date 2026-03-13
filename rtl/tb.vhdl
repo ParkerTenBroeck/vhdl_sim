@@ -12,10 +12,8 @@ architecture sim of tb is
   signal btn  : std_logic_vector(31 downto 0) := (others => '0');
   signal sw   : std_logic_vector(31 downto 0) := (others => '0');
   signal led  : std_logic_vector(31 downto 0) := (others => '0');
-  signal seg0 : std_logic_vector(31 downto 0) := (others => '0');
-  signal seg1 : std_logic_vector(31 downto 0) := (others => '0');
-  signal seg2 : std_logic_vector(31 downto 0) := (others => '0');
-  signal seg3 : std_logic_vector(31 downto 0) := (others => '0');
+  signal segv : std_logic_vector(31 downto 0) := (others => '0');
+  signal segs : std_logic_vector(31 downto 0) := (others => '0');
 
 
   procedure ffi_init is
@@ -37,7 +35,7 @@ architecture sim of tb is
   end function;
   attribute foreign of ffi_get_btn : function is "VHPIDIRECT ffi_get_btn";
 
-  procedure ffi_set_outputs(led_i: integer; seg0_i: integer; seg1_i: integer; seg2_i: integer; seg3_i: integer) is
+  procedure ffi_set_outputs(led_i: integer; segv_i: integer; segs_i: integer) is
   begin
   end procedure;
   attribute foreign of ffi_set_outputs : procedure is
@@ -63,10 +61,8 @@ begin
       btn  => btn,
       sw   => sw,
       led  => led,
-      seg0 => seg0,
-      seg1 => seg1,
-      seg2 => seg2,
-      seg3 => seg3
+      segv => segv,
+      segs => segs
     );
 
   -- 500 Hz clock (2 ms period)
@@ -91,10 +87,8 @@ begin
 
       ffi_set_outputs(
           to_integer(signed(clean_slv(led))),
-          to_integer(signed(clean_slv(seg0))),
-          to_integer(signed(clean_slv(seg1))),
-          to_integer(signed(clean_slv(seg2))),
-          to_integer(signed(clean_slv(seg3)))
+          to_integer(signed(clean_slv(segv))),
+          to_integer(signed(clean_slv(segs)))
       );
     end loop;
   end process;

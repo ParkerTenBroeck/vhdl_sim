@@ -9,10 +9,8 @@ port (
   btn: in std_logic_vector(31 downto 0); 
   sw: in std_logic_vector(31 downto 0); 
   led: out std_logic_vector(31 downto 0);
-  seg0: out std_logic_vector(31 downto 0);
-  seg1: out std_logic_vector(31 downto 0);
-  seg2: out std_logic_vector(31 downto 0);
-  seg3: out std_logic_vector(31 downto 0)
+  segv: out std_logic_vector(31 downto 0);
+  segs: out std_logic_vector(31 downto 0)
   );
 end circuit;
 
@@ -71,11 +69,11 @@ architecture description of circuit is
 
 begin
 
-  seg0(6 downto 0) <= dec7seg(reg_out(7 downto 4));
-  seg0(14 downto 8) <= dec7seg(reg_out(3 downto 0));
+  segs(6 downto 0) <= dec7seg(reg_out(7 downto 4));
+  segs(14 downto 8) <= dec7seg(reg_out(3 downto 0));
 
-  seg0(22 downto 16) <= dec7seg(reg_pc(7 downto 4));
-  seg0(30 downto 24) <= dec7seg(reg_pc(3 downto 0));
+  segs(22 downto 16) <= dec7seg(reg_pc(7 downto 4));
+  segs(30 downto 24) <= dec7seg(reg_pc(3 downto 0));
 
   led(7 downto 0) <= std_logic_vector(reg_a);
   led(23 downto 16) <= std_logic_vector(reg_b);

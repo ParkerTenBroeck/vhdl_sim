@@ -1,5 +1,8 @@
 use std::{
-    collections::HashMap, ffi::OsStr, ops::Deref, path::{Path, PathBuf}
+    collections::HashMap,
+    ffi::OsStr,
+    ops::Deref,
+    path::{Path, PathBuf},
 };
 use tokio::process::{Child, Command};
 
@@ -46,9 +49,7 @@ impl AsRef<Path> for TempDir {
     }
 }
 
-pub async fn copy_and_build(
-    files: HashMap<String, String>,
-) -> HResult<TempDir> {
+pub async fn copy_and_build(files: HashMap<String, String>) -> HResult<TempDir> {
     use std::hash::*;
     let mut hasher = std::hash::DefaultHasher::default();
     for (key, value) in &files {
@@ -73,19 +74,18 @@ pub async fn copy_and_build(
     Ok(work_dir)
 }
 
-
-pub async fn build(build: &Path, src: &Path) -> HResult<()>{
+pub async fn build(build: &Path, src: &Path) -> HResult<()> {
     std::fs::create_dir_all(build)?;
     let embedded_lib_path = build.join("libvhdl_conn.a");
     let embedded_tb_path = build.join("tb.vhdl");
     std::fs::write(&embedded_lib_path, EMBEDDED_VHDL_UI_LIB)?;
     std::fs::write(&embedded_tb_path, EMBEDDED_TB_VHDL)?;
 
-        let mut cmd = Command::new("ghdl");
+    let mut cmd = Command::new("ghdl");
     cmd.kill_on_drop(true);
     cmd.args(["-i", "-g", "--std=08"]);
 
-    for file in src.read_dir().unwrap().flatten(){
+    for file in src.read_dir().unwrap().flatten() {
         if Path::new(&file.file_name()).extension() == Some(OsStr::new("vhdl")) {
             cmd.arg(file.path().canonicalize()?);
         }
@@ -98,7 +98,6 @@ pub async fn build(build: &Path, src: &Path) -> HResult<()>{
 
     cmd.current_dir(build);
     ensure_ok(cmd.spawn()?).await?;
-
 
     let mut cmd = Command::new("ghdl");
     cmd.kill_on_drop(true);
@@ -113,6 +112,6 @@ pub async fn build(build: &Path, src: &Path) -> HResult<()>{
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
     ensure_ok(cmd.spawn()?).await?;
-    
+
     Ok(())
 }

@@ -1,5 +1,6 @@
 use axum::{
-    Error, extract::ws::{Message, WebSocket}
+    Error,
+    extract::ws::{Message, WebSocket},
 };
 use futures_util::{
     SinkExt, StreamExt,
@@ -8,11 +9,11 @@ use futures_util::{
 use std::{path::PathBuf, time::Duration};
 use tokio::{
     io::{AsyncBufReadExt, BufReader, Lines},
-    process::{Child, ChildStderr, ChildStdin, ChildStdout}, time::Instant,
+    process::{Child, ChildStderr, ChildStdin, ChildStdout},
+    time::Instant,
 };
 
 use crate::{ClientMsg, ServerMsg, build, run};
-
 
 struct Process {
     process: Child,
@@ -21,7 +22,6 @@ struct Process {
     stdout: Lines<BufReader<ChildStdout>>,
     stdin: ChildStdin,
 }
-
 
 struct Handler {
     sender: SplitSink<WebSocket, Message>,
@@ -36,7 +36,6 @@ struct Handler {
 }
 
 impl Handler {
-
     fn workspace(socket: WebSocket, build: PathBuf, src: PathBuf, refresh_time: Duration) -> Self {
         let (sender, receiver) = socket.split();
         Self {
@@ -55,7 +54,12 @@ impl Handler {
             stream: "stdout",
             line: msg.as_ref(),
         };
-        _ = self.sender.send(Message::Text(serde_json::to_string(&msg).unwrap_or_default().into())).await;
+        _ = self
+            .sender
+            .send(Message::Text(
+                serde_json::to_string(&msg).unwrap_or_default().into(),
+            ))
+            .await;
     }
 
     pub async fn eprint(&mut self, msg: impl AsRef<str>) {
@@ -64,36 +68,51 @@ impl Handler {
             stream: "stderr",
             line: msg.as_ref(),
         };
-        _ = self.sender.send(Message::Text(serde_json::to_string(&msg).unwrap_or_default().into())).await;
+        _ = self
+            .sender
+            .send(Message::Text(
+                serde_json::to_string(&msg).unwrap_or_default().into(),
+            ))
+            .await;
     }
 
     async fn stop_process(&mut self) {
         self.process = None;
-        _ = self.sender.send(Message::Text(serde_json::to_string(&ServerMsg::Stop).unwrap_or_default().into())).await;
+        _ = self
+            .sender
+            .send(Message::Text(
+                serde_json::to_string(&ServerMsg::Stop)
+                    .unwrap_or_default()
+                    .into(),
+            ))
+            .await;
     }
 
     async fn handle_websocket_msg(&mut self, msg: ClientMsg) {
-        match msg{
+        match msg {
             ClientMsg::Start => self.run_program().await,
             ClientMsg::Stop => self.stop_process().await,
             ClientMsg::Input { switch, buttons } => {
-                if let Some(process) = &mut self.process{
+                if let Some(process) = &mut self.process {
                     use tokio::io::AsyncWriteExt;
-                    _ = process.stdin.write_all(format!("btn={}\n", buttons).as_bytes()).await;
-                    _ = process.stdin.write_all(format!("sw={}\n", switch).as_bytes()).await;
+                    _ = process
+                        .stdin
+                        .write_all(format!("btn={}\n", buttons).as_bytes())
+                        .await;
+                    _ = process
+                        .stdin
+                        .write_all(format!("sw={}\n", switch).as_bytes())
+                        .await;
                 }
-            },
+            }
         }
     }
 
-    async fn handle_websocket_receive(
-        &mut self,
-        msg: Option<Result<Message, Error>>,
-    ) -> bool {
+    async fn handle_websocket_receive(&mut self, msg: Option<Result<Message, Error>>) -> bool {
         match msg {
             Some(Ok(Message::Close(_))) => true,
             Some(Ok(Message::Text(msg))) => {
-                let msg = match serde_json::from_str(msg.as_str()){
+                let msg = match serde_json::from_str(msg.as_str()) {
                     Ok(msg) => msg,
                     Err(err) => {
                         self.eprint(format!("Client message error {err}")).await;
@@ -107,7 +126,7 @@ impl Handler {
             Some(Err(err)) => {
                 self.eprint(format!("Client websocket error {err}")).await;
                 true
-            },
+            }
             None => true,
         }
     }
@@ -115,7 +134,7 @@ impl Handler {
     async fn run(&mut self) {
         loop {
             if let Some(process) = &mut self.process {
-                if let Ok(Some(_)) = process.process.try_wait(){
+                if let Ok(Some(_)) = process.process.try_wait() {
                     self.stop_process().await;
                     continue;
                 }
@@ -143,14 +162,12 @@ impl Handler {
                             Ok(Some(line)) => {
                                 let msg = if let Some(repr) = line.strip_prefix("led="){
                                     ServerMsg::Led(repr.parse().unwrap_or(0))
-                                }else if let Some(repr) = line.strip_prefix("seg0="){
-                                    ServerMsg::Seg0(repr.parse().unwrap_or(0))
-                                }else if let Some(repr) = line.strip_prefix("seg1="){
-                                    ServerMsg::Seg1(repr.parse().unwrap_or(0))
-                                }else if let Some(repr) = line.strip_prefix("seg2="){
-                                    ServerMsg::Seg2(repr.parse().unwrap_or(0))
-                                }else if let Some(repr) = line.strip_prefix("seg3="){
-                                    ServerMsg::Seg3(repr.parse().unwrap_or(0))
+                                }else if let Some(repr) = line.strip_prefix("seg=") 
+                                    && let Some((val, idx)) = repr.split_once(";") {
+                                    ServerMsg::Seg{
+                                        value: val.parse().unwrap_or(0),
+                                        index: idx.parse().unwrap_or(0)
+                                    }
                                 }else{
                                     self.eprint(line).await;
                                     continue;
@@ -170,19 +187,18 @@ impl Handler {
                         _ = process.stdin.write_all("\n".as_bytes()).await;
                     }
                 }
-            }else{
+            } else {
                 let res = self.receiver.next().await;
-                if self.handle_websocket_receive(res).await{
+                if self.handle_websocket_receive(res).await {
                     break;
                 }
             }
         }
     }
 
-    async fn run_program(&mut self) {        
-
+    async fn run_program(&mut self) {
         match build::build(&self.build_dir, &self.src_dir).await {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(err) => {
                 _ = self.eprint(format!("Failed to build: {err}")).await;
                 return;
@@ -200,13 +216,25 @@ impl Handler {
         let stderr = BufReader::new(process.stderr).lines();
         let stdin = process.stdin;
 
-        _ = self.sender.send(Message::Text(serde_json::to_string(&ServerMsg::Start).unwrap_or_default().into())).await;
-        self.process = Some(
-            Process { process: process.child, stderr, stdout, stdin }
-        )
+        _ = self
+            .sender
+            .send(Message::Text(
+                serde_json::to_string(&ServerMsg::Start)
+                    .unwrap_or_default()
+                    .into(),
+            ))
+            .await;
+        self.process = Some(Process {
+            process: process.child,
+            stderr,
+            stdout,
+            stdin,
+        })
     }
 }
 
 pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
-    Handler::workspace(socket, "./target".into(), "./src".into(), refresh_time).run().await;
+    Handler::workspace(socket, "./target".into(), "./src".into(), refresh_time)
+        .run()
+        .await;
 }
