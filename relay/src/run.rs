@@ -2,6 +2,8 @@ use std::path::Path;
 
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 
+use crate::build::{BuildArtifact, Simulator};
+
 pub struct Process {
     pub child: Child,
     pub stdin: ChildStdin,
@@ -9,16 +11,26 @@ pub struct Process {
     pub stderr: ChildStderr,
 }
 
-pub async fn run(artifact_dir: &Path) -> Result<Process, Box<dyn std::error::Error + Send + Sync>> {
-    let mut cmd = Command::new("ghdl");
-    cmd.args([
-        "-r",
-        "--std=08",
-        "tb",
-        "--stop-delta=4294967296",
-        "--unbuffered",
-        "--",
-    ]);
+pub async fn run(
+    artifact_dir: &Path,
+    artifact: &BuildArtifact,
+) -> Result<Process, Box<dyn std::error::Error + Send + Sync>> {
+    let mut cmd = match artifact.simulator {
+        Simulator::Ghdl => {
+            let mut cmd = Command::new("ghdl");
+            cmd.args([
+                "-r",
+                "--std=08",
+                "tb",
+                "--stop-delta=4294967296",
+                "--unbuffered",
+                "--",
+            ]);
+            cmd
+        }
+        Simulator::Verilator => Command::new(&artifact.run_target),
+    };
+
     cmd.args(std::env::args_os());
     cmd.current_dir(artifact_dir);
     cmd.kill_on_drop(true);

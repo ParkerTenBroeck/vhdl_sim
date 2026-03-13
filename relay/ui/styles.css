@@ -300,6 +300,26 @@ textarea {
   background: var(--surface-soft);
 }
 
+.editorLanguageLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.editorLanguageSelect {
+  min-width: 104px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface-soft);
+  font: inherit;
+}
+
+.editorLanguageSelect:focus {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
 .lineGutter {
   width: 54px;
   margin: 0;

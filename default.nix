@@ -5,6 +5,8 @@
       llvmPackages.bintools
       rustup
       ghdl-llvm
+      verilator
+      python3
     ];
     RUSTC_VERSION = "nightly";
     # https://github.com/rust-lang/rust-bindgen#environment-variables

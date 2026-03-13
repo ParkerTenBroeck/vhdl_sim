@@ -19,8 +19,8 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
         return;
     };
 
-    let artifact_dir = match build::copy_and_build(files).await {
-        Ok(dir) => dir,
+    let temp_build = match build::copy_and_build(files).await {
+        Ok(build) => build,
         Err(err) => {
             _ = sender
                 .send(Message::Text(format!("Failed to build: {err}").into()))
@@ -29,7 +29,10 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
         }
     };
 
-    let mut process = match run::run(&artifact_dir).await {
+    let artifact_dir = temp_build.dir;
+    let artifact = temp_build.artifact;
+
+    let mut process = match run::run(&artifact_dir, &artifact).await {
         Ok(process) => process,
         Err(err) => {
             _ = sender
@@ -71,7 +74,6 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
                 out = sout.next_line() => {
                     match out{
                         Ok(Some(line)) => {
-                            
                             let msg = ServerMsg::Log {
                                 stream: "stdout",
                                 line: line.strip_prefix(artifact_prefix).unwrap_or(&line),
@@ -114,7 +116,7 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
                     print_deadline += refresh_time;
                     process.stdin.write_all("\n".as_bytes()).await?;
                 }
-            }        
+            }
         }
         Ok(())
     }.await;

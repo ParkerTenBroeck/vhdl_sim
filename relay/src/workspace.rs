@@ -162,7 +162,7 @@ impl Handler {
                             Ok(Some(line)) => {
                                 let msg = if let Some(repr) = line.strip_prefix("led="){
                                     ServerMsg::Led(repr.parse().unwrap_or(0))
-                                }else if let Some(repr) = line.strip_prefix("seg=") 
+                                }else if let Some(repr) = line.strip_prefix("seg=")
                                     && let Some((val, idx)) = repr.split_once(";") {
                                     ServerMsg::Seg{
                                         value: val.parse().unwrap_or(0),
@@ -197,15 +197,15 @@ impl Handler {
     }
 
     async fn run_program(&mut self) {
-        match build::build(&self.build_dir, &self.src_dir).await {
-            Ok(_) => {}
+        let artifact = match build::build(&self.build_dir, &self.src_dir).await {
+            Ok(artifact) => artifact,
             Err(err) => {
                 _ = self.eprint(format!("Failed to build: {err}")).await;
                 return;
             }
         };
 
-        let process = match run::run(&self.build_dir).await {
+        let process = match run::run(&self.build_dir, &artifact).await {
             Ok(process) => process,
             Err(err) => {
                 self.eprint(format!("Failed to run: {err}")).await;
@@ -233,8 +233,8 @@ impl Handler {
     }
 }
 
-pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
-    Handler::workspace(socket, "./target".into(), "./src".into(), refresh_time)
+pub async fn ws_handler(socket: WebSocket, workspace_src: PathBuf, refresh_time: Duration) {
+    Handler::workspace(socket, "./target".into(), workspace_src, refresh_time)
         .run()
         .await;
 }

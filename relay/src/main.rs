@@ -7,8 +7,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    net::{IpAddr, SocketAddr},
-    time::Duration,
+    net::{IpAddr, SocketAddr}, path::PathBuf, time::Duration
 };
 
 pub mod build;
@@ -45,12 +44,13 @@ async fn not_found() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "not found")
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct Config {
     ip: IpAddr,
     port: u16,
     update_ms: u64,
     workspace_ws: bool,
+    workspace_src: PathBuf,
 }
 
 impl Default for Config {
@@ -59,7 +59,8 @@ impl Default for Config {
             ip: IpAddr::from([127, 0, 0, 1]),
             port: 8080,
             update_ms: 30,
-            workspace_ws: true,
+            workspace_ws: false,
+            workspace_src: "./src".into(),
         }
     }
 }
@@ -91,6 +92,10 @@ fn parse_config_from_args() -> Result<Config, String> {
             }
             "--workspace" => {
                 cfg.workspace_ws = true;
+            }
+            "--workspace-src" => {
+                cfg.workspace_ws = true;
+                cfg.workspace_src = args.next().ok_or("missing value for --workspace-src")?.into();
             }
             "--help" | "-h" => {
                 return Err(
@@ -144,8 +149,9 @@ async fn main() {
             "/ws/workspace",
             get(move |ws: WebSocketUpgrade| {
                 let update_interval = update_interval;
+                let workspace_src = cfg.workspace_src;
                 async move {
-                    ws.on_upgrade(move |socket| workspace::ws_handler(socket, update_interval))
+                    ws.on_upgrade(move |socket| workspace::ws_handler(socket, workspace_src.clone(), update_interval))
                 }
             }),
         );

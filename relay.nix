@@ -12,11 +12,11 @@ pkgs.rustPlatform.buildRustPackage {
   cargoBuildFlags = [ "-p" "relay" ];
 
   nativeBuildInputs = [ pkgs.makeWrapper ];
-  buildInputs = [ pkgs.ghdl-llvm pkgs.zlib ];
+  buildInputs = [ pkgs.ghdl-llvm pkgs.verilator pkgs.python3 pkgs.zlib ];
 
   postFixup = ''
     wrapProgram $out/bin/relay \
-      --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.ghdl-llvm pkgs.glib.dev ]} \
+      --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.ghdl-llvm pkgs.verilator pkgs.python3 pkgs.glib.dev ]} \
       --prefix LIBRARY_PATH : ${pkgs.lib.makeLibraryPath [ pkgs.zlib ]} \
       --prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath [ pkgs.zlib ]}
   '';

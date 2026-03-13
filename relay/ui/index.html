@@ -10,8 +10,13 @@
   <main class="grid">
     <section id="editorSection" class="card editor">
       <div class="cardHeader">
-        <div class="cardTitle">VHDL</div>
+        <div class="cardTitle">HDL</div>
         <div class="cardActions">
+          <label class="editorLanguageLabel" for="editorLanguage">Language</label>
+          <select id="editorLanguage" class="editorLanguageSelect" aria-label="Select HDL language">
+            <option value="vhdl">VHDL</option>
+            <option value="verilog">Verilog</option>
+          </select>
           <button id="loadExampleBtn" class="secondary">Load example</button>
         </div>
       </div>

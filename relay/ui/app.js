@@ -1,4 +1,6 @@
 const LS_KEY_VHDL = "circuit_ui:circuit.vhdl";
+const LS_KEY_VERILOG = "circuit_ui:circuit.v";
+const LS_KEY_EDITOR_LANGUAGE = "circuit_ui:editor_language";
 const LS_KEY_MODE = "circuit_ui:mode";
 
 const EXAMPLE_VHDL_TEXT = `library ieee;
@@ -28,6 +30,27 @@ begin
   end process;
 end description;`;
 
+const EXAMPLE_VERILOG_TEXT = `// Do not modify the following module interface.
+module circuit (
+    input  wire        clk,   // 500 Hz, period 2 ms
+    input  wire [31:0] btn,
+    input  wire [31:0] sw,
+    output reg  [31:0] led = 32'h00000000,
+    output wire [31:0] segv,
+    output wire [31:0] segs
+);
+    reg [31:0] counter = 32'h00000000;
+
+    assign segv = 32'h00000000;
+    assign segs = 32'h00000000;
+
+    always @(posedge clk) begin
+        counter <= counter + 32'd1;
+        led <= counter ^ sw ^ btn;
+    end
+endmodule
+`;
+
 function getDomRefs() {
   return {
     statusPill: document.getElementById("statusPill"),
@@ -37,6 +60,7 @@ function getDomRefs() {
 
     editorSection: document.getElementById("editorSection"),
     vhdlEditor: document.getElementById("vhdlEditor"),
+    editorLanguage: document.getElementById("editorLanguage"),
     lineGutter: document.getElementById("lineGutter"),
     loadExampleBtn: document.getElementById("loadExampleBtn"),
 
@@ -147,9 +171,18 @@ class LogController {
 }
 
 class EditorController {
-  constructor({ editorSection, vhdlEditor, lineGutter, loadExampleBtn, enabled, externalFiles }) {
+  constructor({
+    editorSection,
+    vhdlEditor,
+    editorLanguage,
+    lineGutter,
+    loadExampleBtn,
+    enabled,
+    externalFiles,
+  }) {
     this.editorSection = editorSection;
     this.vhdlEditor = vhdlEditor;
+    this.editorLanguage = editorLanguage;
     this.lineGutter = lineGutter;
     this.loadExampleBtn = loadExampleBtn;
 
@@ -157,6 +190,7 @@ class EditorController {
     this.externalFiles = externalFiles && typeof externalFiles === "object" ? externalFiles : null;
     this.saveTimer = null;
     this.initialized = false;
+    this.language = "vhdl";
   }
 
   init() {
@@ -180,22 +214,31 @@ class EditorController {
     if (this.initialized) return;
     this.initialized = true;
 
-    const saved = this.loadFromLocalStorage();
-    this.vhdlEditor.value = saved !== null ? saved : EXAMPLE_VHDL_TEXT;
+    this.language = this.loadLanguageFromLocalStorage();
+    this.editorLanguage.value = this.language;
+    this.vhdlEditor.value = this.getCurrentBuffer();
 
     this.loadExampleBtn.addEventListener("click", () => {
-      this.vhdlEditor.value = EXAMPLE_VHDL_TEXT;
-      this.saveToLocalStorageDebounced();
+      this.vhdlEditor.value = this.getExampleText(this.language);
+      this.saveCurrentBufferDebounced();
       this.updateLineNumbers();
     });
 
     this.vhdlEditor.addEventListener("input", () => {
-      this.saveToLocalStorageDebounced();
+      this.saveCurrentBufferDebounced();
       this.updateLineNumbers();
     });
 
     this.vhdlEditor.addEventListener("scroll", () => {
       this.lineGutter.scrollTop = this.vhdlEditor.scrollTop;
+    });
+
+    this.editorLanguage.addEventListener("change", () => {
+      this.saveCurrentBuffer();
+      this.language = this.editorLanguage.value === "verilog" ? "verilog" : "vhdl";
+      this.persistLanguage();
+      this.vhdlEditor.value = this.getCurrentBuffer();
+      this.updateLineNumbers();
     });
   }
 
@@ -204,9 +247,9 @@ class EditorController {
       return this.externalFiles ? { ...this.externalFiles } : {};
     }
 
-    return {
-      "circuit.vhdl": this.vhdlEditor.value ?? "",
-    };
+    return this.language === "verilog"
+      ? { "circuit.v": this.vhdlEditor.value ?? "" }
+      : { "circuit.vhdl": this.vhdlEditor.value ?? "" };
   }
 
   updateLineNumbers() {
@@ -221,26 +264,60 @@ class EditorController {
     this.lineGutter.textContent = gutterText;
   }
 
-  saveToLocalStorageDebounced() {
+  saveCurrentBufferDebounced() {
     if (this.saveTimer) clearTimeout(this.saveTimer);
 
     this.saveTimer = setTimeout(() => {
-      try {
-        localStorage.setItem(LS_KEY_VHDL, this.vhdlEditor.value ?? "");
-      } catch {
-        // Ignore localStorage failures.
-      }
+      this.saveCurrentBuffer();
     }, 250);
   }
 
-  loadFromLocalStorage() {
+  saveCurrentBuffer() {
+    const key = this.language === "verilog" ? LS_KEY_VERILOG : LS_KEY_VHDL;
     try {
-      const saved = localStorage.getItem(LS_KEY_VHDL);
+      localStorage.setItem(key, this.vhdlEditor.value ?? "");
+    } catch {
+      // Ignore localStorage failures.
+    }
+  }
+
+  loadLanguageFromLocalStorage() {
+    try {
+      const saved = localStorage.getItem(LS_KEY_EDITOR_LANGUAGE);
+      if (saved === "verilog" || saved === "vhdl") return saved;
+    } catch {
+      // Ignore localStorage failures.
+    }
+    return "vhdl";
+  }
+
+  persistLanguage() {
+    try {
+      localStorage.setItem(LS_KEY_EDITOR_LANGUAGE, this.language);
+    } catch {
+      // Ignore localStorage failures.
+    }
+  }
+
+  getCurrentBuffer() {
+    const saved = this.loadBufferFromLocalStorage(this.language);
+    if (saved !== null) return saved;
+    return this.getExampleText(this.language);
+  }
+
+  loadBufferFromLocalStorage(language) {
+    const key = language === "verilog" ? LS_KEY_VERILOG : LS_KEY_VHDL;
+    try {
+      const saved = localStorage.getItem(key);
       if (saved !== null) return saved;
     } catch {
       // Ignore localStorage failures.
     }
     return null;
+  }
+
+  getExampleText(language) {
+    return language === "verilog" ? EXAMPLE_VERILOG_TEXT : EXAMPLE_VHDL_TEXT;
   }
 }
 
