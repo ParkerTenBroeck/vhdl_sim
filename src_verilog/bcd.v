@@ -24,27 +24,6 @@ module bcd (
         end
     endfunction
 
-    function [3:0] to_bcd_digit;
-        input integer value;
-        integer remainder;
-        begin
-            remainder = value % 10;
-            case (remainder)
-                0: to_bcd_digit = 4'd0;
-                1: to_bcd_digit = 4'd1;
-                2: to_bcd_digit = 4'd2;
-                3: to_bcd_digit = 4'd3;
-                4: to_bcd_digit = 4'd4;
-                5: to_bcd_digit = 4'd5;
-                6: to_bcd_digit = 4'd6;
-                7: to_bcd_digit = 4'd7;
-                8: to_bcd_digit = 4'd8;
-                9: to_bcd_digit = 4'd9;
-                default: to_bcd_digit = 4'd0;
-            endcase
-        end
-    endfunction
-
     integer scaled_hundredths;
     integer magnitude;
     integer frac_hundredths;
@@ -80,7 +59,8 @@ module bcd (
             tmp = magnitude;
 
             for (j = 0; j < 8; j = j + 1) begin
-                digits[j] = to_bcd_digit(tmp);
+                integer dig = tmp % 10;
+                digits[j] = dig[3:0];
                 tmp = tmp / 10;
             end
 
