@@ -197,9 +197,26 @@ impl Handler {
     }
 
     async fn run_program(&mut self) {
+        _ = self
+            .sender
+            .send(Message::Text(
+                serde_json::to_string(&ServerMsg::Compiling)
+                    .unwrap_or_default()
+                    .into(),
+            ))
+            .await;
+
         let artifact = match build::build(&self.build_dir, &self.src_dir).await {
             Ok(artifact) => artifact,
             Err(err) => {
+                _ = self
+                    .sender
+                    .send(Message::Text(
+                        serde_json::to_string(&ServerMsg::Stop)
+                            .unwrap_or_default()
+                            .into(),
+                    ))
+                    .await;
                 _ = self.eprint(format!("Failed to build: {err}")).await;
                 return;
             }
@@ -208,6 +225,14 @@ impl Handler {
         let process = match run::run(&self.build_dir, &artifact).await {
             Ok(process) => process,
             Err(err) => {
+                _ = self
+                    .sender
+                    .send(Message::Text(
+                        serde_json::to_string(&ServerMsg::Stop)
+                            .unwrap_or_default()
+                            .into(),
+                    ))
+                    .await;
                 self.eprint(format!("Failed to run: {err}")).await;
                 return;
             }

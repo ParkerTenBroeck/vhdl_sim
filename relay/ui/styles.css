@@ -213,6 +213,12 @@ textarea {
   background: color-mix(in srgb, var(--accent-muted) 72%, black 28%);
 }
 
+.pill.state-compiling {
+  border-color: color-mix(in srgb, var(--warn) 70%, white 18%);
+  background: color-mix(in srgb, var(--warn) 24%, var(--surface-header) 76%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn) 32%, transparent);
+}
+
 .pill.state-running {
   border-color: var(--pill-connected-border);
   background: var(--pill-connected-bg);

@@ -693,6 +693,7 @@ class CircuitUiApp {
     this.config = config;
     this.dom = getDomRefs();
     this.mode = config.initialMode;
+    this.isCompiling = false;
     this.isRunning = false;
     this.reconnectTimer = null;
 
@@ -725,19 +726,26 @@ class CircuitUiApp {
         if (this.mode === "uploaded") {
           this.connection.send(this.editor.getFilesPayload());
         }
-        this.connection.send({ input: this.inputs.getInputPayload() });
         this.setRunButtonEnabled(true);
         this.updateStatusIndicator();
       },
       onMessage: (parsed, raw) => {
+        if (isUnitMessage(parsed, "compiling")) {
+          this.setCompiling(true);
+          return;
+        }
+
         if (isUnitMessage(parsed, "start")) {
           this.logs.clear();
           this.outputs.resetVisuals();
+          this.setCompiling(false);
           this.setRunning(true);
+          this.connection.send({ input: this.inputs.getInputPayload() });
           return;
         }
 
         if (isUnitMessage(parsed, "stop")) {
+          this.setCompiling(false);
           this.setRunning(false);
           return;
         }
@@ -755,6 +763,7 @@ class CircuitUiApp {
       },
       onClose: () => {
         this.setRunButtonEnabled(false);
+        this.setCompiling(false);
         this.setRunning(false);
         this.updateStatusIndicator();
         if (this.mode === "workspace") {
@@ -825,6 +834,14 @@ class CircuitUiApp {
       this.cancelReconnect();
     }
 
+    this.setCompiling(false);
+    this.setRunning(false);
+    this.updateStatusIndicator();
+  }
+
+  setCompiling(compiling) {
+    this.isCompiling = Boolean(compiling);
+    this.dom.runToggleBtn.disabled = this.isCompiling || !this.connection.isConnected();
     this.updateStatusIndicator();
   }
 
@@ -836,7 +853,7 @@ class CircuitUiApp {
   }
 
   setRunButtonEnabled(enabled) {
-    this.dom.runToggleBtn.disabled = !enabled;
+    this.dom.runToggleBtn.disabled = !enabled || this.isCompiling;
     this.updateStatusIndicator();
   }
 
@@ -860,13 +877,20 @@ class CircuitUiApp {
   updateStatusIndicator() {
     const pill = this.dom.statusPill;
     const connected = this.connection.isConnected();
+    const compiling = connected && this.isCompiling;
     const running = connected && this.isRunning;
 
-    pill.classList.remove("state-disabled", "state-connected", "state-running");
+    pill.classList.remove("state-disabled", "state-connected", "state-compiling", "state-running");
 
     if (!connected) {
       pill.textContent = "DISABLED";
       pill.classList.add("state-disabled");
+      return;
+    }
+
+    if (compiling) {
+      pill.textContent = "COMPILING";
+      pill.classList.add("state-compiling");
       return;
     }
 

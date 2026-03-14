@@ -184,6 +184,7 @@ pub enum ClientMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ServerMsg<'a> {
     Log { stream: &'a str, line: &'a str },
+    Compiling,
     Start,
     Stop,
     Led(u32),

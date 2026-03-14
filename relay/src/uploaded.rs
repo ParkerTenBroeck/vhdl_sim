@@ -19,9 +19,24 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
         return;
     };
 
+    _ = sender
+        .send(Message::Text(
+            serde_json::to_string(&ServerMsg::Compiling)
+                .unwrap_or_default()
+                .into(),
+        ))
+        .await;
+
     let temp_build = match build::copy_and_build(files).await {
         Ok(build) => build,
         Err(err) => {
+            _ = sender
+                .send(Message::Text(
+                    serde_json::to_string(&ServerMsg::Stop)
+                        .unwrap_or_default()
+                        .into(),
+                ))
+                .await;
             _ = sender
                 .send(Message::Text(format!("Failed to build: {err}").into()))
                 .await;
@@ -36,11 +51,25 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
         Ok(process) => process,
         Err(err) => {
             _ = sender
+                .send(Message::Text(
+                    serde_json::to_string(&ServerMsg::Stop)
+                        .unwrap_or_default()
+                        .into(),
+                ))
+                .await;
+            _ = sender
                 .send(Message::Text(format!("Failed to run: {err}").into()))
                 .await;
             return;
         }
     };
+    _ = sender
+        .send(Message::Text(
+            serde_json::to_string(&ServerMsg::Start)
+                .unwrap_or_default()
+                .into(),
+        ))
+        .await;
     let mut sout = BufReader::new(process.stdout).lines();
     let mut serr = BufReader::new(process.stderr).lines();
 
@@ -80,7 +109,16 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
                             };
                             sender.send(Message::Text(serde_json::to_string(&msg)?.into())).await?;
                         },
-                        Ok(None) => break,
+                        Ok(None) => {
+                            _ = sender
+                                .send(Message::Text(
+                                    serde_json::to_string(&ServerMsg::Stop)
+                                        .unwrap_or_default()
+                                        .into(),
+                                ))
+                                .await;
+                            break;
+                        },
                         Err(err) => {
                             Err(format!("Failed to read proccess sout: {err}"))?;
                         }
@@ -105,7 +143,16 @@ pub async fn ws_handler(socket: WebSocket, refresh_time: Duration) {
                             };
                             sender.send(Message::Text(serde_json::to_string(&msg)?.into())).await?;
                         },
-                        Ok(None) => break,
+                        Ok(None) => {
+                            _ = sender
+                                .send(Message::Text(
+                                    serde_json::to_string(&ServerMsg::Stop)
+                                        .unwrap_or_default()
+                                        .into(),
+                                ))
+                                .await;
+                            break;
+                        },
                         Err(err) => {
                             Err(format!("Failed to read proccess serr: {err}"))?
                         }
